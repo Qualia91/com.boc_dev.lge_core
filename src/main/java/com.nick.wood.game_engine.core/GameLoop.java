@@ -115,7 +115,7 @@ public class GameLoop {
 
 			}
 
-			window.loop(renderGraphLayerMap);
+			window.render(renderGraphLayerMap);
 
 			lastTime = now;
 
@@ -133,4 +133,5 @@ public class GameLoop {
 	public ExecutorService getExecutorService() {
 		return executorService;
 	}
+
 }

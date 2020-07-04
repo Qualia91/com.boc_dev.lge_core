@@ -30,7 +30,7 @@ public class ChunkLoader {
 	public ChunkLoader(ArrayList<GameObject> gameObjects, int octaves, int lacunarity, int visualRange) {
 
 		this.loadingClippingDistance = visualRange;
-		this.visualClippingDistance2 = visualRange * visualRange;
+		this.visualClippingDistance2 = (visualRange * visualRange) + 1;
 		this.loadingClippingDistance2 = visualClippingDistance2 * 2;
 
 		perlin2Ds = new Perlin2Df[octaves];
