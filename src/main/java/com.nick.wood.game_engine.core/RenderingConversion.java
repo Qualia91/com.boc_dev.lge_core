@@ -130,10 +130,7 @@ public class RenderingConversion {
 
 	public void createRenderLists(RenderGraph renderGraph, GameObject gameObject, Matrix4f transformationSoFar) {
 
-		//if (child.getGameObjectData().isDelete()) {
-		//	delete(child, renderGraph);
-		//	iterator.remove();
-		//}
+		gameObject.getGameObjectData().getUpdater().applyUpdates((deletedGameObject) -> delete(deletedGameObject, renderGraph));
 
 		Iterator<GameObject> iterator = gameObject.getGameObjectData().getChildren().iterator();
 
@@ -187,7 +184,7 @@ public class RenderingConversion {
 						createRenderLists(renderGraph, geometryGameObject, transformationSoFar);
 					}
 					break;
-				case TERRAIN:
+				case TERRAIN_CHUNK:
 					TerrainChunkObject meshGameObject = (TerrainChunkObject) child;
 					MeshObject meshObject = getFromMap(meshMap, meshGameObject.getBuilder());
 					if (child.getGameObjectData().isVisible()) {

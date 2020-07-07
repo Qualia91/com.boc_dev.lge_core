@@ -6,6 +6,8 @@ import com.nick.wood.game_engine.model.game_objects.GameObject;
 import com.nick.wood.game_engine.model.input.ControllerState;
 import com.nick.wood.game_engine.model.input.DirectTransformController;
 import com.nick.wood.game_engine.model.input.GameManagementInputController;
+import com.nick.wood.game_engine.systems.ChunkLoader;
+import com.nick.wood.game_engine.systems.GESystem;
 import com.nick.wood.graphics_library.Picking;
 import com.nick.wood.graphics_library.Window;
 import com.nick.wood.graphics_library.WindowInitialisationParameters;
@@ -22,7 +24,7 @@ import java.util.concurrent.Executors;
 
 public class GameLoop {
 
-	private static final float FPS = 60;
+	private static final float FPS = 120;
 	private final WindowInitialisationParameters wip;
 	private final DirectTransformController directTransformController;
 	private final HashMap<String, ArrayList<GameObject>> layeredGameObjectsMap;
@@ -33,6 +35,8 @@ public class GameLoop {
 	private final ExecutorService executorService;
 	private final GameManagementInputController gameManagementInputController;
 	private final Window window;
+
+	private final ArrayList<GESystem> geSystems = new ArrayList<>();
 
 	public GameLoop(ArrayList<Scene> sceneLayers,
 	                WindowInitialisationParameters wip,
@@ -71,6 +75,8 @@ public class GameLoop {
 			}
 		}
 
+		geSystems.add(new ChunkLoader());
+
 	}
 
 	public void run() throws IOException {
@@ -91,6 +97,10 @@ public class GameLoop {
 			deltaSeconds += (now - lastTime) / 1000000000.0;
 
 			if (deltaSeconds >= 1/FPS) {
+
+				for (GESystem geSystem : geSystems) {
+					geSystem.update(layeredGameObjectsMap);
+				}
 
 				for (Map.Entry<String, ArrayList<GameObject>> stringArrayListEntry : layeredGameObjectsMap.entrySet()) {
 
@@ -119,7 +129,8 @@ public class GameLoop {
 
 		window.close();
 
-		executorService.shutdown();
+		// todo lazy
+		executorService.shutdownNow();
 	}
 
 	public Bus getGameBus() {

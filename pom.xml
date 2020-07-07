@@ -17,8 +17,8 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.nick.wood.game_engine.control</groupId>
-            <artifactId>com.nick.wood.game_engine.control</artifactId>
+            <groupId>com.nick.wood.game_engine.systems</groupId>
+            <artifactId>com.nick.wood.game_engine.systems</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
