@@ -1,5 +1,9 @@
 package com.nick.wood.game_engine.core;
 
+import com.nick.wood.game_engine.event_bus.event_data.GameObjectEventData;
+import com.nick.wood.game_engine.event_bus.event_types.GameObjectEventType;
+import com.nick.wood.game_engine.event_bus.events.GameObjectEvent;
+import com.nick.wood.game_engine.event_bus.interfaces.Bus;
 import com.nick.wood.game_engine.model.game_objects.*;
 import com.nick.wood.maths.noise.Perlin2Df;
 import com.nick.wood.maths.objects.srt.Transform;
@@ -13,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ChunkLoader {
 
-	private final GroupObject groupObject;
+	private final GameObject parent;
 
 	private final int chunkSize = 50;
 	private final int segmentSize = 100;
@@ -26,9 +30,11 @@ public class ChunkLoader {
 	private final int loadingClippingDistance2;
 	private final int visualClippingDistance2;
 	private final ArrayList<TerrainTextureGameObject> terrainTextureGameObjects;
+	private final Bus bus;
 
-	public ChunkLoader(ArrayList<GameObject> gameObjects, int octaves, int lacunarity, int visualRange) {
+	public ChunkLoader(GameObject parent, int octaves, int lacunarity, int visualRange, Bus bus) {
 
+		this.bus = bus;
 		this.loadingClippingDistance = visualRange;
 		this.visualClippingDistance2 = (visualRange * visualRange) + 1;
 		this.loadingClippingDistance2 = visualClippingDistance2 * 2;
@@ -40,9 +46,7 @@ public class ChunkLoader {
 			perlin2Ds[i] = new Perlin2Df(10000, currentSegmentSize);
 		}
 
-		this.groupObject = new GroupObject();
-		gameObjects.add(groupObject);
-
+		this.parent = parent;
 
 		this.terrainTextureGameObjects = new ArrayList<>();
 
@@ -102,10 +106,16 @@ public class ChunkLoader {
 			int dist = next.distance2AwayFrom(playerChunk);
 			// if chunk is within visual range, set render to true
 			if (dist < visualClippingDistance2) {
-				chunkIndexSceneGraphHashMap.get(next).getGameObjectData().setRenderChildren(true);
+				bus.dispatch(new GameObjectEvent(
+						new GameObjectEventData(chunkIndexSceneGraphHashMap.get(next).getGameObjectData().getUuid()),
+						GameObjectEventType.SHOW_ALL
+				));
 			}
 			else if (dist < loadingClippingDistance2) {
-				chunkIndexSceneGraphHashMap.get(next).getGameObjectData().setRenderChildren(false);
+				bus.dispatch(new GameObjectEvent(
+						new GameObjectEventData(chunkIndexSceneGraphHashMap.get(next).getGameObjectData().getUuid()),
+						GameObjectEventType.HIDE_ALL
+				));
 			}
 			else {
 				destroyChunk(next);
@@ -117,7 +127,10 @@ public class ChunkLoader {
 	}
 
 	private void destroyChunk(Vec2i chunkIndex) {
-		chunkIndexSceneGraphHashMap.get(chunkIndex).getGameObjectData().markForDeletion();
+		bus.dispatch(new GameObjectEvent(
+				new GameObjectEventData(chunkIndexSceneGraphHashMap.get(chunkIndex).getGameObjectData().getUuid()),
+				GameObjectEventType.REMOVE
+		));
 		chunkIndexSceneGraphHashMap.remove(chunkIndex);
 	}
 
@@ -138,17 +151,16 @@ public class ChunkLoader {
 		Transform transform = new TransformBuilder()
 				.setPosition(new Vec3f(chunkIndex.getX() * chunkSize * cellSpace, chunkIndex.getY() * chunkSize * cellSpace, 0)).build();
 
-		TransformObject transformObject = new TransformObject(groupObject, transform);
-		transformObject.getGameObjectData().setRenderChildren(false);
+		TransformObject transformObject = new TransformObject(transform);
+		transformObject.getGameObjectData().hideAll();
 
-
-		TerrainObject terrainObject = new TerrainObject(
-				transformObject,
+		TerrainChunkObject terrainChunkObject = new TerrainChunkObject(
 				chunkIndex.toString(),
 				grid,
 				terrainTextureGameObjects,
 				cellSpace
 		);
+		transformObject.getGameObjectData().attachGameObjectNode(terrainChunkObject);
 
 		return transformObject;
 	}

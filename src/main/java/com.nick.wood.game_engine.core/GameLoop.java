@@ -1,7 +1,7 @@
 package com.nick.wood.game_engine.core;
 
-import com.nick.wood.event_bus.busses.GameBus;
-import com.nick.wood.event_bus.interfaces.Bus;
+import com.nick.wood.game_engine.event_bus.busses.GameBus;
+import com.nick.wood.game_engine.event_bus.interfaces.Bus;
 import com.nick.wood.game_engine.model.game_objects.GameObject;
 import com.nick.wood.game_engine.model.input.ControllerState;
 import com.nick.wood.game_engine.model.input.DirectTransformController;
@@ -73,7 +73,7 @@ public class GameLoop {
 
 	}
 
-	public void run(Runnable ... runnables) throws IOException {
+	public void run() throws IOException {
 
 		window.init(wip);
 
@@ -91,10 +91,6 @@ public class GameLoop {
 			deltaSeconds += (now - lastTime) / 1000000000.0;
 
 			if (deltaSeconds >= 1/FPS) {
-
-				for (Runnable runnable : runnables) {
-					runnable.run();
-				}
 
 				for (Map.Entry<String, ArrayList<GameObject>> stringArrayListEntry : layeredGameObjectsMap.entrySet()) {
 

@@ -130,7 +130,10 @@ public class RenderingConversion {
 
 	public void createRenderLists(RenderGraph renderGraph, GameObject gameObject, Matrix4f transformationSoFar) {
 
-		System.out.println(meshMap.size());
+		//if (child.getGameObjectData().isDelete()) {
+		//	delete(child, renderGraph);
+		//	iterator.remove();
+		//}
 
 		Iterator<GameObject> iterator = gameObject.getGameObjectData().getChildren().iterator();
 
@@ -138,123 +141,115 @@ public class RenderingConversion {
 
 			GameObject child = iterator.next();
 
-			if (child.getGameObjectData().isDelete()) {
-				delete(child, renderGraph);
-				iterator.remove();
-			}
+			switch (child.getGameObjectData().getType()) {
 
-			if (child.getGameObjectData().isRenderChildren()) {
-
-				switch (child.getGameObjectData().getType()) {
-
-					case TRANSFORM:
-						TransformObject transformGameObject = (TransformObject) child;
-						createRenderLists(renderGraph, transformGameObject, transformGameObject.getTransformForRender().multiply(transformationSoFar));
-						break;
-					case LIGHT:
-						LightObject lightObject = (LightObject) child;
-						if (child.getGameObjectData().isVisible()) {
-							Light light = getFromMap(lightMap, lightObject.getBuilder());
-							if (renderGraph.getLights().containsKey(light)) {
-								renderGraph.getLights().get(light).setTransformation(transformationSoFar);
-							} else {
-								InstanceObject lightInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
-								renderGraph.getLights().put(light, lightInstance);
-							}
+				case TRANSFORM:
+					TransformObject transformGameObject = (TransformObject) child;
+					createRenderLists(renderGraph, transformGameObject, transformGameObject.getTransformForRender().multiply(transformationSoFar));
+					break;
+				case LIGHT:
+					LightObject lightObject = (LightObject) child;
+					if (child.getGameObjectData().isVisible()) {
+						Light light = getFromMap(lightMap, lightObject.getBuilder());
+						if (renderGraph.getLights().containsKey(light)) {
+							renderGraph.getLights().get(light).setTransformation(transformationSoFar);
+						} else {
+							InstanceObject lightInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
+							renderGraph.getLights().put(light, lightInstance);
 						}
-						createRenderLists(renderGraph, lightObject, transformationSoFar);
-						break;
-					case MESH:
+					}
+					createRenderLists(renderGraph, lightObject, transformationSoFar);
+					break;
+				case MESH:
+					if (child.getGameObjectData().isVisible()) {
+						GeometryGameObject geometryGameObject = (GeometryGameObject) child;
 						if (child.getGameObjectData().isVisible()) {
-							GeometryGameObject geometryGameObject = (GeometryGameObject) child;
-							if (child.getGameObjectData().isVisible()) {
-								MeshObject meshObject = getFromMap(meshMap, geometryGameObject.getBuilder());
-								boolean found = false;
-								for (Map.Entry<MeshObject, ArrayList<InstanceObject>> geometryBuilderArrayListEntry : renderGraph.getMeshes().entrySet()) {
-									if (geometryBuilderArrayListEntry.getKey().getStringToCompare().equals(meshObject.getStringToCompare())) {
-										InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
-										geometryBuilderArrayListEntry.getValue().add(meshInstance);
-										found = true;
-										break;
-									}
-								}
-								if (!found) {
-									ArrayList<InstanceObject> geometryBuilders = new ArrayList<>();
+							MeshObject meshObject = getFromMap(meshMap, geometryGameObject.getBuilder());
+							boolean found = false;
+							for (Map.Entry<MeshObject, ArrayList<InstanceObject>> geometryBuilderArrayListEntry : renderGraph.getMeshes().entrySet()) {
+								if (geometryBuilderArrayListEntry.getKey().getStringToCompare().equals(meshObject.getStringToCompare())) {
 									InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
-									geometryBuilders.add(meshInstance);
-									renderGraph.getMeshes().put(meshObject, geometryBuilders);
-
-									// also tell the render graph that a new mesh needs to be created when it gets to the renderer
-									renderGraph.getMeshesToBuild().add(meshObject.getMesh());
+									geometryBuilderArrayListEntry.getValue().add(meshInstance);
+									found = true;
+									break;
 								}
 							}
-							createRenderLists(renderGraph, geometryGameObject, transformationSoFar);
-						}
-						break;
-					case TERRAIN:
-						TerrainObject meshGameObject = (TerrainObject) child;
-						MeshObject meshObject = getFromMap(meshMap, meshGameObject.getBuilder());
-						if (child.getGameObjectData().isVisible()) {
-							if (renderGraph.getTerrainMeshes().containsKey(meshObject)) {
-								InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
-								renderGraph.getTerrainMeshes().get(meshObject).add(meshInstance);
-							} else {
+							if (!found) {
 								ArrayList<InstanceObject> geometryBuilders = new ArrayList<>();
 								InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
 								geometryBuilders.add(meshInstance);
-								renderGraph.getTerrainMeshes().put(meshObject, geometryBuilders);
+								renderGraph.getMeshes().put(meshObject, geometryBuilders);
 
 								// also tell the render graph that a new mesh needs to be created when it gets to the renderer
 								renderGraph.getMeshesToBuild().add(meshObject.getMesh());
 							}
 						}
-						createRenderLists(renderGraph, meshGameObject, transformationSoFar);
-						break;
-					case WATER:
-						WaterObject waterMeshGameObject = (WaterObject) child;
-						MeshObject waterMeshObject = getFromMap(meshMap, waterMeshGameObject.getBuilder());
-						if (child.getGameObjectData().isVisible()) {
-							if (renderGraph.getWaterMeshes().containsKey(waterMeshObject)) {
-								InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
-								renderGraph.getWaterMeshes().get(waterMeshObject).add(meshInstance);
-							} else {
-								ArrayList<InstanceObject> geometryBuilders = new ArrayList<>();
-								InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
-								geometryBuilders.add(meshInstance);
-								renderGraph.getWaterMeshes().put(waterMeshObject, geometryBuilders);
+						createRenderLists(renderGraph, geometryGameObject, transformationSoFar);
+					}
+					break;
+				case TERRAIN:
+					TerrainChunkObject meshGameObject = (TerrainChunkObject) child;
+					MeshObject meshObject = getFromMap(meshMap, meshGameObject.getBuilder());
+					if (child.getGameObjectData().isVisible()) {
+						if (renderGraph.getTerrainMeshes().containsKey(meshObject)) {
+							InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
+							renderGraph.getTerrainMeshes().get(meshObject).add(meshInstance);
+						} else {
+							ArrayList<InstanceObject> geometryBuilders = new ArrayList<>();
+							InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
+							geometryBuilders.add(meshInstance);
+							renderGraph.getTerrainMeshes().put(meshObject, geometryBuilders);
 
-								// also tell the render graph that a new mesh needs to be created when it gets to the renderer
-								renderGraph.getMeshesToBuild().add(waterMeshObject.getMesh());
-							}
+							// also tell the render graph that a new mesh needs to be created when it gets to the renderer
+							renderGraph.getMeshesToBuild().add(meshObject.getMesh());
 						}
-						createRenderLists(renderGraph, waterMeshGameObject, transformationSoFar);
-						break;
-					case SKYBOX:
-						SkyBoxObject skyBoxObject = (SkyBoxObject) child;
-						MeshObject skyBoxMeshObject = getFromMap(meshMap, skyBoxObject.getBuilder());
-						if (child.getGameObjectData().isVisible()) {
-							renderGraph.setSkybox(skyBoxMeshObject);
-						}
-						createRenderLists(renderGraph, skyBoxObject, transformationSoFar);
-						break;
-					case CAMERA:
-						CameraObject cameraObject = (CameraObject) child;
-						if (child.getGameObjectData().isVisible()) {
-							Camera camera = getFromMap(cameraMap, cameraObject.getBuilder());
-							if (renderGraph.getCameras().containsKey(camera)) {
-								renderGraph.getCameras().get(camera).setTransformation(transformationSoFar);
-							} else {
-								InstanceObject cameraInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
-								renderGraph.getCameras().put(camera, cameraInstance);
-							}
-						}
-						createRenderLists(renderGraph, cameraObject, transformationSoFar);
-						break;
-					default:
-						createRenderLists(renderGraph, child, transformationSoFar);
-						break;
+					}
+					createRenderLists(renderGraph, meshGameObject, transformationSoFar);
+					break;
+				case WATER:
+					WaterObject waterMeshGameObject = (WaterObject) child;
+					MeshObject waterMeshObject = getFromMap(meshMap, waterMeshGameObject.getBuilder());
+					if (child.getGameObjectData().isVisible()) {
+						if (renderGraph.getWaterMeshes().containsKey(waterMeshObject)) {
+							InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
+							renderGraph.getWaterMeshes().get(waterMeshObject).add(meshInstance);
+						} else {
+							ArrayList<InstanceObject> geometryBuilders = new ArrayList<>();
+							InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
+							geometryBuilders.add(meshInstance);
+							renderGraph.getWaterMeshes().put(waterMeshObject, geometryBuilders);
 
-				}
+							// also tell the render graph that a new mesh needs to be created when it gets to the renderer
+							renderGraph.getMeshesToBuild().add(waterMeshObject.getMesh());
+						}
+					}
+					createRenderLists(renderGraph, waterMeshGameObject, transformationSoFar);
+					break;
+				case SKYBOX:
+					SkyBoxObject skyBoxObject = (SkyBoxObject) child;
+					MeshObject skyBoxMeshObject = getFromMap(meshMap, skyBoxObject.getBuilder());
+					if (child.getGameObjectData().isVisible()) {
+						renderGraph.setSkybox(skyBoxMeshObject);
+					}
+					createRenderLists(renderGraph, skyBoxObject, transformationSoFar);
+					break;
+				case CAMERA:
+					CameraObject cameraObject = (CameraObject) child;
+					if (child.getGameObjectData().isVisible()) {
+						Camera camera = getFromMap(cameraMap, cameraObject.getBuilder());
+						if (renderGraph.getCameras().containsKey(camera)) {
+							renderGraph.getCameras().get(camera).setTransformation(transformationSoFar);
+						} else {
+							InstanceObject cameraInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
+							renderGraph.getCameras().put(camera, cameraInstance);
+						}
+					}
+					createRenderLists(renderGraph, cameraObject, transformationSoFar);
+					break;
+				default:
+					createRenderLists(renderGraph, child, transformationSoFar);
+					break;
+
 			}
 		}
 	}

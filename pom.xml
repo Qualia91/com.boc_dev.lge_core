@@ -41,8 +41,8 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.nick.wood.event_bus</groupId>
-            <artifactId>com.nick.wood.event_bus</artifactId>
+            <groupId>com.nick.wood.game_engine.event_bus</groupId>
+            <artifactId>com.nick.wood.game_engine.event_bus</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
@@ -61,12 +61,6 @@
         <dependency>
             <groupId>com.nick.wood.game_engine.io</groupId>
             <artifactId>com.nick.wood.game_engine.io</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.nick.wood.game_engine.event_bus</groupId>
-            <artifactId>com.nick.wood.game_engine.event_bus</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
