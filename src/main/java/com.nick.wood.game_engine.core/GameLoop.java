@@ -28,7 +28,7 @@ public class GameLoop implements Subscribable {
 
 	private final Set<Class<?>> supports = new HashSet<>();
 
-	private static final float FPS = 120;
+	private static final float FPS = 60;
 	private final WindowInitialisationParameters wip;
 	private final HashMap<String, ArrayList<GameObject>> layeredGameObjectsMap;
 	private final RenderingConversion renderingConversion;
@@ -46,7 +46,7 @@ public class GameLoop implements Subscribable {
 
 		this.supports.add(ManagementEvent.class);
 
-		this.executorService = Executors.newFixedThreadPool(4);
+		this.executorService = Executors.newCachedThreadPool();
 		this.gameBus = new GameBus();
 		this.sceneLayers = sceneLayers;
 		this.wip = wip;
@@ -67,7 +67,7 @@ public class GameLoop implements Subscribable {
 		inputSystem.addControl(directTransformController);
 		inputSystem.addControl(gameManagementInputController);
 
-		geSystems.add(new TerrainGeneration(50));
+		geSystems.add(new TerrainGeneration(100));
 		geSystems.add(new WaterGeneration(100));
 		geSystems.add(inputSystem);
 
@@ -125,8 +125,7 @@ public class GameLoop implements Subscribable {
 
 					// update systems
 					for (GESystem geSystem : geSystems) {
-						long finalSteps = step;
-						executorService.submit(() -> geSystem.update(layeredGameObjectsMap, finalSteps));
+						geSystem.update(layeredGameObjectsMap, step);
 					}
 
 					// convert to render-able objects and send to be rendered

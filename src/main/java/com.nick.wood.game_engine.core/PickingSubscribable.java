@@ -33,7 +33,7 @@ public class PickingSubscribable implements Subscribable, Runnable {
 
 	@Override
 	public void handle(Event<?> event) {
-		eventQueue.add(event);
+		eventQueue.offer(event);
 	}
 
 	@Override
