@@ -13,6 +13,7 @@ import com.nick.wood.game_engine.event_bus.interfaces.Subscribable;
 import com.nick.wood.game_engine.model.game_objects.GameObject;
 import com.nick.wood.game_engine.model.input.ControllerState;
 import com.nick.wood.game_engine.systems.*;
+import com.nick.wood.graphics_library.Picking;
 import com.nick.wood.graphics_library.RenderEventData;
 import com.nick.wood.graphics_library.Window;
 import com.nick.wood.graphics_library.WindowInitialisationParameters;
@@ -45,8 +46,6 @@ public class GameLoop implements Subscribable {
 	                DirectTransformController directTransformController,
 	                HashMap<String, ArrayList<GameObject>> layeredGameObjectsMap) {
 
-
-
 		this.supports.add(ManagementEvent.class);
 
 		this.executorService = Executors.newFixedThreadPool(4);
@@ -64,27 +63,23 @@ public class GameLoop implements Subscribable {
 		this.gameBus.register(controllerState);
 		this.gameBus.register(this);
 
-		//for (Scene sceneLayer : sceneLayers) {
-		//	if (sceneLayer.getPickingShader() != null) {
-		//		this.gameBus.register(new Picking(gameBus, sceneLayer, renderGraphLayerMap.get(sceneLayer.getName())));
-		//	}
-		//}
-
-		directTransformController.setUserInput(controllerState);
-
 		GameManagementInputController gameManagementInputController = new GameManagementInputController(gameBus);
-		gameManagementInputController.setUserInput(controllerState);
+
+		InputSystem inputSystem = new InputSystem(controllerState);
+		inputSystem.addControl(directTransformController);
+		inputSystem.addControl(gameManagementInputController);
 
 		geSystems.add(new TerrainGeneration(100));
 		geSystems.add(new WaterGeneration(100));
-		geSystems.add(directTransformController);
-		geSystems.add(gameManagementInputController);
+		geSystems.add(inputSystem);
 
 	}
 
 	public void render() {
 		Window window = new Window(sceneLayers, gameBus);
 		this.gameBus.register(window);
+
+		long steps = 0;
 
 		long lastTime = System.nanoTime();
 
@@ -98,8 +93,9 @@ public class GameLoop implements Subscribable {
 		}
 
 		while (!window.shouldClose()) {
+			steps++;
 			long now = System.nanoTime();
-			window.render();
+			window.render(steps);
 			deltaSeconds += (now - lastTime) / 1000000000.0;
 			window.setTitle("FPS: " + 1 / deltaSeconds);
 			deltaSeconds = 0.0;
@@ -130,7 +126,8 @@ public class GameLoop implements Subscribable {
 
 					// update systems
 					for (GESystem geSystem : geSystems) {
-						geSystem.update(layeredGameObjectsMap, steps);
+						long finalSteps = steps;
+						executorService.submit(() -> geSystem.update(layeredGameObjectsMap, finalSteps));
 					}
 
 					// convert to render-able objects and send to be rendered
