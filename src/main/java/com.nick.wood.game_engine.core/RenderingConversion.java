@@ -128,15 +128,21 @@ public class RenderingConversion {
 		return meshBuilder.build();
 	}
 
+	public RenderGraph createRenderLists(ArrayList<GameObject> gameObjects) {
+
+		RenderGraph renderGraph = new RenderGraph();
+
+		for (GameObject gameObject : gameObjects) {
+			createRenderLists(renderGraph, gameObject, Matrix4f.Identity);
+		}
+
+		return renderGraph;
+
+	}
+
 	public void createRenderLists(RenderGraph renderGraph, GameObject gameObject, Matrix4f transformationSoFar) {
 
-		gameObject.getGameObjectData().getUpdater().applyUpdates((deletedGameObject) -> delete(deletedGameObject, renderGraph));
-
-		Iterator<GameObject> iterator = gameObject.getGameObjectData().getChildren().iterator();
-
-		while (iterator.hasNext()) {
-
-			GameObject child = iterator.next();
+		for (GameObject child : gameObject.getGameObjectData().getChildren()) {
 
 			switch (child.getGameObjectData().getType()) {
 
@@ -176,9 +182,6 @@ public class RenderingConversion {
 								InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
 								geometryBuilders.add(meshInstance);
 								renderGraph.getMeshes().put(meshObject, geometryBuilders);
-
-								// also tell the render graph that a new mesh needs to be created when it gets to the renderer
-								renderGraph.getMeshesToBuild().add(meshObject.getMesh());
 							}
 						}
 						createRenderLists(renderGraph, geometryGameObject, transformationSoFar);
@@ -196,9 +199,6 @@ public class RenderingConversion {
 							InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
 							geometryBuilders.add(meshInstance);
 							renderGraph.getTerrainMeshes().put(meshObject, geometryBuilders);
-
-							// also tell the render graph that a new mesh needs to be created when it gets to the renderer
-							renderGraph.getMeshesToBuild().add(meshObject.getMesh());
 						}
 					}
 					createRenderLists(renderGraph, meshGameObject, transformationSoFar);
@@ -215,9 +215,6 @@ public class RenderingConversion {
 							InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
 							geometryBuilders.add(meshInstance);
 							renderGraph.getWaterMeshes().put(waterMeshObject, geometryBuilders);
-
-							// also tell the render graph that a new mesh needs to be created when it gets to the renderer
-							renderGraph.getMeshesToBuild().add(waterMeshObject.getMesh());
 						}
 					}
 					createRenderLists(renderGraph, waterMeshGameObject, transformationSoFar);
@@ -251,40 +248,6 @@ public class RenderingConversion {
 		}
 	}
 
-	private void delete(GameObject gameObject, RenderGraph renderGraph) {
-
-		switch (gameObject.getGameObjectData().getType()) {
-			case MESH:
-				meshMap.remove(gameObject.getBuilder().getName());
-				renderGraph.removeMesh(gameObject.getGameObjectData().getUuid());
-				break;
-			case SKYBOX:
-				meshMap.remove(gameObject.getBuilder().getName());
-				renderGraph.removeSkybox();
-				break;
-			case WATER:
-				meshMap.remove(gameObject.getBuilder().getName());
-				renderGraph.removeWater(gameObject.getGameObjectData().getUuid());
-				break;
-			case TERRAIN:
-				meshMap.remove(gameObject.getBuilder().getName());
-				renderGraph.removeTerrain(gameObject.getGameObjectData().getUuid());
-				break;
-			case CAMERA:
-				cameraMap.remove(gameObject.getBuilder().getName());
-				renderGraph.removeCamera(gameObject.getGameObjectData().getUuid());
-				break;
-			case LIGHT:
-				lightMap.remove(gameObject.getBuilder().getName());
-				renderGraph.removeLight(gameObject.getGameObjectData().getUuid());
-				break;
-		}
-		gameObject.getGameObjectData().delete();
-		for (GameObject child : gameObject.getGameObjectData().getChildren()) {
-			delete(child, renderGraph);
-		}
-	}
-
 	private <T, U extends Builder> T getFromMap(WeakHashMap<String, T> map, U builder) {
 		if (map.containsKey(builder.getName())) {
 			// check if the builder has been updated since it was last create. if so, rebuild and enter into map
@@ -302,5 +265,15 @@ public class RenderingConversion {
 		}
 	}
 
+	public WeakHashMap<String, Camera> getCameraMap() {
+		return cameraMap;
+	}
 
+	public WeakHashMap<String, Light> getLightMap() {
+		return lightMap;
+	}
+
+	public WeakHashMap<String, MeshObject> getMeshMap() {
+		return meshMap;
+	}
 }
