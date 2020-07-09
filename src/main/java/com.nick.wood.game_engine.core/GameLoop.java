@@ -13,7 +13,6 @@ import com.nick.wood.game_engine.event_bus.interfaces.Subscribable;
 import com.nick.wood.game_engine.model.game_objects.GameObject;
 import com.nick.wood.game_engine.model.input.ControllerState;
 import com.nick.wood.game_engine.systems.*;
-import com.nick.wood.graphics_library.Picking;
 import com.nick.wood.graphics_library.RenderEventData;
 import com.nick.wood.graphics_library.Window;
 import com.nick.wood.graphics_library.WindowInitialisationParameters;
@@ -29,14 +28,13 @@ public class GameLoop implements Subscribable {
 
 	private final Set<Class<?>> supports = new HashSet<>();
 
-	private static final float FPS = 60;
+	private static final float FPS = 120;
 	private final WindowInitialisationParameters wip;
 	private final HashMap<String, ArrayList<GameObject>> layeredGameObjectsMap;
 	private final RenderingConversion renderingConversion;
 	private final GameBus gameBus;
 	private final ExecutorService executorService;
 	private final ArrayList<Scene> sceneLayers;
-
 	private final ArrayList<GESystem> geSystems = new ArrayList<>();
 
 	private volatile boolean shutdown = false;
@@ -69,7 +67,7 @@ public class GameLoop implements Subscribable {
 		inputSystem.addControl(directTransformController);
 		inputSystem.addControl(gameManagementInputController);
 
-		geSystems.add(new TerrainGeneration(100));
+		geSystems.add(new TerrainGeneration(50));
 		geSystems.add(new WaterGeneration(100));
 		geSystems.add(inputSystem);
 
@@ -77,7 +75,6 @@ public class GameLoop implements Subscribable {
 
 	public void render() {
 		Window window = new Window(sceneLayers, gameBus);
-		this.gameBus.register(window);
 
 		long steps = 0;
 
@@ -91,6 +88,8 @@ public class GameLoop implements Subscribable {
 			gameBus.dispatch(new ErrorEvent(e, ErrorEventType.CRITICAL));
 			return;
 		}
+
+		this.gameBus.register(window);
 
 		while (!window.shouldClose()) {
 			steps++;
@@ -107,7 +106,7 @@ public class GameLoop implements Subscribable {
 
 	public void update() {
 
-		long steps = 0;
+		long step = 0;
 		long lastTime = System.nanoTime();
 
 		double deltaSeconds = 0;
@@ -122,11 +121,11 @@ public class GameLoop implements Subscribable {
 
 				if (deltaSeconds >= 1 / FPS) {
 
-					steps++;
+					step++;
 
 					// update systems
 					for (GESystem geSystem : geSystems) {
-						long finalSteps = steps;
+						long finalSteps = step;
 						executorService.submit(() -> geSystem.update(layeredGameObjectsMap, finalSteps));
 					}
 
@@ -135,10 +134,10 @@ public class GameLoop implements Subscribable {
 
 						updateObjectTree(stringArrayListEntry.getValue());
 
-						RenderGraph renderLists = renderingConversion.createRenderLists(stringArrayListEntry.getValue());
+						RenderGraph renderLists = renderingConversion.createRenderLists(stringArrayListEntry.getValue(), step);
 
 						gameBus.dispatch(new RenderEvent(
-								new RenderEventData(stringArrayListEntry.getKey(),
+								new RenderEventData(step, stringArrayListEntry.getKey(),
 										renderLists),
 								RenderEventType.UPDATE
 						));

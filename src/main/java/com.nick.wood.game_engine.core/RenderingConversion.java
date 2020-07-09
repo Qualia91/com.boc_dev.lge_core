@@ -128,9 +128,9 @@ public class RenderingConversion {
 		return meshBuilder.build();
 	}
 
-	public RenderGraph createRenderLists(ArrayList<GameObject> gameObjects) {
+	public RenderGraph createRenderLists(ArrayList<GameObject> gameObjects, long step) {
 
-		RenderGraph renderGraph = new RenderGraph();
+		RenderGraph renderGraph = new RenderGraph(step);
 
 		for (GameObject gameObject : gameObjects) {
 			createRenderLists(renderGraph, gameObject, Matrix4f.Identity);
@@ -264,16 +264,5 @@ public class RenderingConversion {
 			return t;
 		}
 	}
-
-	public WeakHashMap<String, Camera> getCameraMap() {
-		return cameraMap;
-	}
-
-	public WeakHashMap<String, Light> getLightMap() {
-		return lightMap;
-	}
-
-	public WeakHashMap<String, MeshObject> getMeshMap() {
-		return meshMap;
-	}
+	
 }
