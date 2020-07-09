@@ -9,7 +9,6 @@ import com.nick.wood.game_engine.event_bus.events.ManagementEvent;
 import com.nick.wood.game_engine.event_bus.events.RenderEvent;
 import com.nick.wood.game_engine.event_bus.interfaces.Bus;
 import com.nick.wood.game_engine.event_bus.interfaces.Event;
-import com.nick.wood.game_engine.event_bus.interfaces.EventType;
 import com.nick.wood.game_engine.event_bus.interfaces.Subscribable;
 import com.nick.wood.game_engine.model.game_objects.GameObject;
 import com.nick.wood.game_engine.model.input.ControllerState;
@@ -22,7 +21,6 @@ import com.nick.wood.graphics_library.objects.render_scene.Scene;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -35,7 +33,6 @@ public class GameLoop implements Subscribable {
 	private final HashMap<String, ArrayList<GameObject>> layeredGameObjectsMap;
 	private final RenderingConversion renderingConversion;
 	private final GameBus gameBus;
-	private final ControllerState controllerState;
 	private final ExecutorService executorService;
 	private final ArrayList<Scene> sceneLayers;
 
@@ -48,7 +45,9 @@ public class GameLoop implements Subscribable {
 	                DirectTransformController directTransformController,
 	                HashMap<String, ArrayList<GameObject>> layeredGameObjectsMap) {
 
-		supports.add(ManagementEvent.class);
+
+
+		this.supports.add(ManagementEvent.class);
 
 		this.executorService = Executors.newFixedThreadPool(4);
 		this.gameBus = new GameBus();
@@ -58,7 +57,7 @@ public class GameLoop implements Subscribable {
 
 		this.renderingConversion = new RenderingConversion();
 
-		this.controllerState = new ControllerState();
+		ControllerState controllerState = new ControllerState();
 
 		this.executorService.submit(controllerState);
 
@@ -76,7 +75,8 @@ public class GameLoop implements Subscribable {
 		GameManagementInputController gameManagementInputController = new GameManagementInputController(gameBus);
 		gameManagementInputController.setUserInput(controllerState);
 
-		geSystems.add(new TerrainGeneration());
+		geSystems.add(new TerrainGeneration(100));
+		geSystems.add(new WaterGeneration(100));
 		geSystems.add(directTransformController);
 		geSystems.add(gameManagementInputController);
 
@@ -111,9 +111,10 @@ public class GameLoop implements Subscribable {
 
 	public void update() {
 
+		long steps = 0;
 		long lastTime = System.nanoTime();
 
-		double deltaSeconds = -2.0;
+		double deltaSeconds = 0;
 
 		while (!shutdown) {
 
@@ -125,9 +126,11 @@ public class GameLoop implements Subscribable {
 
 				if (deltaSeconds >= 1 / FPS) {
 
+					steps++;
+
 					// update systems
 					for (GESystem geSystem : geSystems) {
-						geSystem.update(layeredGameObjectsMap);
+						geSystem.update(layeredGameObjectsMap, steps);
 					}
 
 					// convert to render-able objects and send to be rendered

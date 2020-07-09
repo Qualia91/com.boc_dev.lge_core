@@ -203,8 +203,8 @@ public class RenderingConversion {
 					}
 					createRenderLists(renderGraph, meshGameObject, transformationSoFar);
 					break;
-				case WATER:
-					WaterObject waterMeshGameObject = (WaterObject) child;
+				case WATER_CHUNK:
+					WaterChunkObject waterMeshGameObject = (WaterChunkObject) child;
 					MeshObject waterMeshObject = getFromMap(meshMap, waterMeshGameObject.getBuilder());
 					if (child.getGameObjectData().isVisible()) {
 						if (renderGraph.getWaterMeshes().containsKey(waterMeshObject)) {
