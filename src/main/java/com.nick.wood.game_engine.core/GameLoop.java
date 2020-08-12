@@ -103,6 +103,8 @@ public class GameLoop implements Subscribable {
 		}
 
 		window.close();
+		shutdown = true;
+		executorService.shutdownNow();
 	}
 
 	public void update() {
