@@ -13,6 +13,9 @@ import com.nick.wood.game_engine.event_bus.interfaces.Subscribable;
 import com.nick.wood.game_engine.model.game_objects.GameObject;
 import com.nick.wood.game_engine.model.input.ControllerState;
 import com.nick.wood.game_engine.systems.*;
+import com.nick.wood.game_engine.systems.control.DirectTransformController;
+import com.nick.wood.game_engine.systems.control.GameManagementInputController;
+import com.nick.wood.game_engine.systems.control.InputSystem;
 import com.nick.wood.graphics_library.RenderEventData;
 import com.nick.wood.graphics_library.Window;
 import com.nick.wood.graphics_library.WindowInitialisationParameters;
@@ -67,8 +70,6 @@ public class GameLoop implements Subscribable {
 		inputSystem.addControl(directTransformController);
 		inputSystem.addControl(gameManagementInputController);
 
-		geSystems.add(new TerrainGeneration(100));
-		geSystems.add(new WaterGeneration(100));
 		geSystems.add(inputSystem);
 
 	}
@@ -184,5 +185,9 @@ public class GameLoop implements Subscribable {
 	@Override
 	public boolean supports(Class<? extends Event> aClass) {
 		return supports.contains(aClass);
+	}
+
+	public ArrayList<GESystem> getGESystems() {
+		return geSystems;
 	}
 }
