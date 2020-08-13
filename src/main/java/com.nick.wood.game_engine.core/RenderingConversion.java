@@ -15,6 +15,7 @@ import com.nick.wood.graphics_library.objects.mesh_objects.MeshType;
 import com.nick.wood.graphics_library.objects.render_scene.InstanceObject;
 import com.nick.wood.graphics_library.objects.render_scene.RenderGraph;
 import com.nick.wood.maths.objects.matrix.Matrix4f;
+import com.nick.wood.maths.objects.srt.Transform;
 
 import java.util.*;
 import java.util.function.Function;
@@ -128,27 +129,25 @@ public class RenderingConversion {
 		return meshBuilder.build();
 	}
 
-	public RenderGraph createRenderLists(ArrayList<GameObject> gameObjects, long step) {
+	public RenderGraph createRenderLists(List<GameObject> gameObjects, long step) {
 
 		RenderGraph renderGraph = new RenderGraph(step);
 
-		for (GameObject gameObject : gameObjects) {
-			createRenderLists(renderGraph, gameObject, Matrix4f.Identity);
-		}
+		createRenderLists(renderGraph, gameObjects, Matrix4f.Identity);
 
 		return renderGraph;
 
 	}
 
-	public void createRenderLists(RenderGraph renderGraph, GameObject gameObject, Matrix4f transformationSoFar) {
+	public void createRenderLists(RenderGraph renderGraph, List<GameObject> gameObjects, Matrix4f transformationSoFar) {
 
-		for (GameObject child : gameObject.getGameObjectData().getChildren()) {
+		for (GameObject child : gameObjects) {
 
 			switch (child.getGameObjectData().getType()) {
 
 				case TRANSFORM:
 					TransformObject transformGameObject = (TransformObject) child;
-					createRenderLists(renderGraph, transformGameObject, transformGameObject.getTransformForRender().multiply(transformationSoFar));
+					createRenderLists(renderGraph, transformGameObject.getGameObjectData().getChildren(), transformGameObject.getTransformForRender().multiply(transformationSoFar));
 					break;
 				case LIGHT:
 					LightObject lightObject = (LightObject) child;
@@ -161,7 +160,7 @@ public class RenderingConversion {
 							renderGraph.getLights().put(light, lightInstance);
 						}
 					}
-					createRenderLists(renderGraph, lightObject, transformationSoFar);
+					createRenderLists(renderGraph, lightObject.getGameObjectData().getChildren(), transformationSoFar);
 					break;
 				case MESH:
 					if (child.getGameObjectData().isVisible()) {
@@ -184,7 +183,7 @@ public class RenderingConversion {
 								renderGraph.getMeshes().put(meshObject, geometryBuilders);
 							}
 						}
-						createRenderLists(renderGraph, geometryGameObject, transformationSoFar);
+						createRenderLists(renderGraph, geometryGameObject.getGameObjectData().getChildren(), transformationSoFar);
 					}
 					break;
 				case TERRAIN_CHUNK:
@@ -201,7 +200,7 @@ public class RenderingConversion {
 							renderGraph.getTerrainMeshes().put(meshObject, geometryBuilders);
 						}
 					}
-					createRenderLists(renderGraph, meshGameObject, transformationSoFar);
+					createRenderLists(renderGraph, meshGameObject.getGameObjectData().getChildren(), transformationSoFar);
 					break;
 				case WATER_CHUNK:
 					WaterChunkObject waterMeshGameObject = (WaterChunkObject) child;
@@ -217,7 +216,7 @@ public class RenderingConversion {
 							renderGraph.getWaterMeshes().put(waterMeshObject, geometryBuilders);
 						}
 					}
-					createRenderLists(renderGraph, waterMeshGameObject, transformationSoFar);
+					createRenderLists(renderGraph, waterMeshGameObject.getGameObjectData().getChildren(), transformationSoFar);
 					break;
 				case SKYBOX:
 					SkyBoxObject skyBoxObject = (SkyBoxObject) child;
@@ -225,7 +224,7 @@ public class RenderingConversion {
 					if (child.getGameObjectData().isVisible()) {
 						renderGraph.setSkybox(skyBoxMeshObject);
 					}
-					createRenderLists(renderGraph, skyBoxObject, transformationSoFar);
+					createRenderLists(renderGraph, skyBoxObject.getGameObjectData().getChildren(), transformationSoFar);
 					break;
 				case CAMERA:
 					CameraObject cameraObject = (CameraObject) child;
@@ -238,10 +237,10 @@ public class RenderingConversion {
 							renderGraph.getCameras().put(camera, cameraInstance);
 						}
 					}
-					createRenderLists(renderGraph, cameraObject, transformationSoFar);
+					createRenderLists(renderGraph, cameraObject.getGameObjectData().getChildren(), transformationSoFar);
 					break;
 				default:
-					createRenderLists(renderGraph, child, transformationSoFar);
+					createRenderLists(renderGraph, child.getGameObjectData().getChildren(), transformationSoFar);
 					break;
 
 			}
