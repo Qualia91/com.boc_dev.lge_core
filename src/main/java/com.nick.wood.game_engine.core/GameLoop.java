@@ -111,6 +111,7 @@ public class GameLoop implements Subscribable {
 
 		long step = 0;
 		long lastTime = System.nanoTime();
+		long startTime = System.nanoTime();
 
 		double deltaSeconds = 0;
 
@@ -128,7 +129,7 @@ public class GameLoop implements Subscribable {
 
 					// update systems
 					for (GESystem geSystem : geSystems) {
-						geSystem.update(layeredGameObjectsMap, step);
+						geSystem.update(layeredGameObjectsMap, now - startTime);
 					}
 
 					// convert to render-able objects and send to be rendered
