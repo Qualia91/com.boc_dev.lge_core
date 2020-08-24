@@ -10,6 +10,7 @@ import com.nick.wood.game_engine.event_bus.events.RenderEvent;
 import com.nick.wood.game_engine.event_bus.interfaces.Bus;
 import com.nick.wood.game_engine.event_bus.interfaces.Event;
 import com.nick.wood.game_engine.event_bus.interfaces.Subscribable;
+import com.nick.wood.game_engine.event_bus.subscribables.ErrorSubscribable;
 import com.nick.wood.game_engine.model.game_objects.GameObject;
 import com.nick.wood.game_engine.model.input.ControllerState;
 import com.nick.wood.game_engine.systems.*;
@@ -63,6 +64,8 @@ public class GameLoop implements Subscribable {
 
 		this.gameBus.register(controllerState);
 		this.gameBus.register(this);
+
+		this.gameBus.register(new ErrorSubscribable(System.err::println));
 
 		GameManagementInputController gameManagementInputController = new GameManagementInputController(gameBus);
 
