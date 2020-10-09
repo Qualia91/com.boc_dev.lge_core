@@ -40,6 +40,7 @@ public class GameLoop implements Subscribable {
 	private final ExecutorService executorService;
 	private final ArrayList<Scene> sceneLayers;
 	private final ArrayList<GESystem> geSystems = new ArrayList<>();
+	private final InputSystem inputSystem;
 
 	private volatile boolean shutdown = false;
 
@@ -69,7 +70,7 @@ public class GameLoop implements Subscribable {
 
 		GameManagementInputController gameManagementInputController = new GameManagementInputController(gameBus);
 
-		InputSystem inputSystem = new InputSystem(controllerState);
+		this.inputSystem = new InputSystem(controllerState);
 		inputSystem.addControl(directTransformController);
 		inputSystem.addControl(gameManagementInputController);
 
@@ -169,6 +170,10 @@ public class GameLoop implements Subscribable {
 			gameObject.getGameObjectData().getUpdater().applyUpdates();
 			updateObjectTree(gameObject.getGameObjectData().getChildren());
 		}
+	}
+
+	public InputSystem getInputSystem() {
+		return inputSystem;
 	}
 
 	public Bus getGameBus() {

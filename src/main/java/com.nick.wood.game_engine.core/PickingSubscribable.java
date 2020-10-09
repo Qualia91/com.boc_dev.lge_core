@@ -8,6 +8,7 @@ import com.nick.wood.game_engine.event_bus.events.PickingEvent;
 import com.nick.wood.game_engine.event_bus.interfaces.Event;
 import com.nick.wood.game_engine.event_bus.interfaces.Subscribable;
 import com.nick.wood.game_engine.model.game_objects.GameObject;
+import com.nick.wood.game_engine.model.game_objects.GeometryGameObject;
 import com.nick.wood.game_engine.model.utils.GameObjectUtils;
 
 import java.util.ArrayList;
@@ -67,8 +68,8 @@ public class PickingSubscribable implements Subscribable, Runnable {
 
 		} else if (event.getType().equals(PickingEventType.RESPONSE)) {
 			PickingEvent pickingEvent = (PickingEvent) event;
-			GameObject gameObject = GameObjectUtils.FindGameObjectByID(gameObjects, ((PickingResponseEventData) pickingEvent.getData()).getUuid());
-			System.out.println(gameObject);
+			GeometryGameObject geometryGameObject = (GeometryGameObject) GameObjectUtils.FindGameObjectByID(gameObjects, ((PickingResponseEventData) pickingEvent.getData()).getUuid());
+			System.out.println(geometryGameObject.getBuilder().getName());
 		}
 	}
 }
