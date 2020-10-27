@@ -32,7 +32,7 @@ public class GameLoop implements Subscribable {
 
 	private final Set<Class<?>> supports = new HashSet<>();
 
-	private static final float FPS = 60;
+	private static final float FPS = 120;
 	private final WindowInitialisationParameters wip;
 	private final HashMap<String, ArrayList<GameObject>> layeredGameObjectsMap;
 	private final RenderingConversion renderingConversion;
@@ -85,7 +85,7 @@ public class GameLoop implements Subscribable {
 
 		long lastTime = System.nanoTime();
 
-		double deltaSeconds = 0;
+		double deltaSeconds;
 
 		try {
 			window.init(wip);
@@ -98,12 +98,13 @@ public class GameLoop implements Subscribable {
 
 		while (!window.shouldClose()) {
 			steps++;
-			long now = System.nanoTime();
 			window.render(steps);
-			deltaSeconds += (now - lastTime) / 1000000000.0;
-			window.setTitle("FPS: " + 1 / deltaSeconds);
-			deltaSeconds = 0.0;
-			lastTime = now;
+			deltaSeconds = (System.nanoTime() - lastTime) / 1000000000.0;
+			double fps = 1 / deltaSeconds;
+			if (fps < 50) {
+				window.setTitle("FPS: " + fps);
+			}
+			lastTime = System.nanoTime();
 		}
 
 		window.close();

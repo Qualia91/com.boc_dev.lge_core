@@ -12,6 +12,7 @@ import com.nick.wood.graphics_library.objects.TerrainTextureObject;
 import com.nick.wood.graphics_library.objects.mesh_objects.MeshBuilder;
 import com.nick.wood.graphics_library.objects.mesh_objects.MeshObject;
 import com.nick.wood.graphics_library.objects.mesh_objects.MeshType;
+import com.nick.wood.graphics_library.objects.mesh_objects.Terrain;
 import com.nick.wood.graphics_library.objects.render_scene.InstanceObject;
 import com.nick.wood.graphics_library.objects.render_scene.RenderGraph;
 import com.nick.wood.maths.objects.matrix.Matrix4f;
@@ -100,6 +101,7 @@ public class RenderingConversion {
 	private MeshObject buildGeometryIO(Builder builder) {
 		GeometryBuilder geometryBuilder = (GeometryBuilder) builder;
 		MeshBuilder meshBuilder = new MeshBuilder();
+		meshBuilder.setGivenName(geometryBuilder.getName());
 		meshBuilder.setMeshType(MeshType.valueOf(geometryBuilder.getGeometryType().toString()));
 		meshBuilder.setInvertedNormals(geometryBuilder.isInvertedNormals());
 		meshBuilder.setTexture(geometryBuilder.getTexture());
@@ -139,6 +141,7 @@ public class RenderingConversion {
 
 	}
 
+	// todo no bloody text!!!!
 	public void createRenderLists(RenderGraph renderGraph, List<GameObject> gameObjects, Matrix4f transformationSoFar) {
 
 		for (GameObject child : gameObjects) {
@@ -167,10 +170,11 @@ public class RenderingConversion {
 						GeometryGameObject geometryGameObject = (GeometryGameObject) child;
 						if (child.getGameObjectData().isVisible()) {
 							MeshObject meshObject = getFromMap(meshMap, geometryGameObject.getBuilder());
+							InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(),
+									meshObject.getMeshTransformation().getSRT().multiply(transformationSoFar).transpose());
 							boolean found = false;
 							for (Map.Entry<MeshObject, ArrayList<InstanceObject>> geometryBuilderArrayListEntry : renderGraph.getMeshes().entrySet()) {
 								if (geometryBuilderArrayListEntry.getKey().getStringToCompare().equals(meshObject.getStringToCompare())) {
-									InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
 									geometryBuilderArrayListEntry.getValue().add(meshInstance);
 									found = true;
 									break;
@@ -178,7 +182,6 @@ public class RenderingConversion {
 							}
 							if (!found) {
 								ArrayList<InstanceObject> geometryBuilders = new ArrayList<>();
-								InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
 								geometryBuilders.add(meshInstance);
 								renderGraph.getMeshes().put(meshObject, geometryBuilders);
 							}
@@ -191,13 +194,11 @@ public class RenderingConversion {
 					MeshObject meshObject = getFromMap(meshMap, meshGameObject.getBuilder());
 					if (child.getGameObjectData().isVisible()) {
 						if (renderGraph.getTerrainMeshes().containsKey(meshObject)) {
-							InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
-							renderGraph.getTerrainMeshes().get(meshObject).add(meshInstance);
+							renderGraph.getTerrainMeshes().get(meshObject).setTransformation(meshObject.getMeshTransformation().getSRT().multiply(transformationSoFar).transpose());
 						} else {
-							ArrayList<InstanceObject> geometryBuilders = new ArrayList<>();
-							InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
-							geometryBuilders.add(meshInstance);
-							renderGraph.getTerrainMeshes().put(meshObject, geometryBuilders);
+							InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(),
+									meshObject.getMeshTransformation().getSRT().multiply(transformationSoFar).transpose());
+							renderGraph.getTerrainMeshes().put((Terrain) meshObject, meshInstance);
 						}
 					}
 					createRenderLists(renderGraph, meshGameObject.getGameObjectData().getChildren(), transformationSoFar);
@@ -206,12 +207,12 @@ public class RenderingConversion {
 					WaterChunkObject waterMeshGameObject = (WaterChunkObject) child;
 					MeshObject waterMeshObject = getFromMap(meshMap, waterMeshGameObject.getBuilder());
 					if (child.getGameObjectData().isVisible()) {
+						InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(),
+								waterMeshObject.getMeshTransformation().getSRT().multiply(transformationSoFar).transpose());
 						if (renderGraph.getWaterMeshes().containsKey(waterMeshObject)) {
-							InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
 							renderGraph.getWaterMeshes().get(waterMeshObject).add(meshInstance);
 						} else {
 							ArrayList<InstanceObject> geometryBuilders = new ArrayList<>();
-							InstanceObject meshInstance = new InstanceObject(child.getGameObjectData().getUuid(), transformationSoFar);
 							geometryBuilders.add(meshInstance);
 							renderGraph.getWaterMeshes().put(waterMeshObject, geometryBuilders);
 						}
