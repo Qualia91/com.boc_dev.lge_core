@@ -3,28 +3,30 @@ package com.nick.wood.game_engine.core;
 import com.nick.wood.game_engine.event_bus.busses.GameBus;
 import com.nick.wood.game_engine.event_bus.event_types.ErrorEventType;
 import com.nick.wood.game_engine.event_bus.event_types.ManagementEventType;
-import com.nick.wood.game_engine.event_bus.event_types.RenderEventType;
 import com.nick.wood.game_engine.event_bus.events.ErrorEvent;
 import com.nick.wood.game_engine.event_bus.events.ManagementEvent;
-import com.nick.wood.game_engine.event_bus.events.RenderEvent;
 import com.nick.wood.game_engine.event_bus.interfaces.Bus;
 import com.nick.wood.game_engine.event_bus.interfaces.Event;
 import com.nick.wood.game_engine.event_bus.interfaces.Subscribable;
 import com.nick.wood.game_engine.event_bus.subscribables.ErrorSubscribable;
-import com.nick.wood.game_engine.model.game_objects.GameObject;
+import com.nick.wood.game_engine.gcs_model.gcs.RegistryUpdater;
+import com.nick.wood.game_engine.gcs_model.bus.RenderableUpdateEvent;
+import com.nick.wood.game_engine.gcs_model.bus.RenderableUpdateEventType;
+import com.nick.wood.game_engine.gcs_model.gcs.Component;
+import com.nick.wood.game_engine.gcs_model.generated.components.ComponentType;
+import com.nick.wood.game_engine.gcs_model.generated.components.TransformObject;
+import com.nick.wood.game_engine.gcs_model.systems.GcsSystem;
 import com.nick.wood.game_engine.model.input.ControllerState;
-import com.nick.wood.game_engine.systems.*;
-import com.nick.wood.game_engine.systems.control.DirectTransformController;
 import com.nick.wood.game_engine.systems.control.GameManagementInputController;
 import com.nick.wood.game_engine.systems.control.InputSystem;
-import com.nick.wood.graphics_library.RenderEventData;
 import com.nick.wood.graphics_library.Window;
 import com.nick.wood.graphics_library.WindowInitialisationParameters;
-import com.nick.wood.graphics_library.objects.render_scene.RenderGraph;
 import com.nick.wood.graphics_library.objects.render_scene.Scene;
+import com.nick.wood.maths.objects.matrix.Matrix4f;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -32,32 +34,52 @@ public class GameLoop implements Subscribable {
 
 	private final Set<Class<?>> supports = new HashSet<>();
 
-	private static final float FPS = 120;
+	private static final float FPS = 60;
 	private final WindowInitialisationParameters wip;
-	private final HashMap<String, ArrayList<GameObject>> layeredGameObjectsMap;
 	private final RenderingConversion renderingConversion;
 	private final GameBus gameBus;
 	private final ExecutorService executorService;
 	private final ArrayList<Scene> sceneLayers;
-	private final ArrayList<GESystem> geSystems = new ArrayList<>();
 	private final InputSystem inputSystem;
+	private final RegistryUpdater registryUpdater;
+	private final ArrayList<ComponentType> renderComponentTypes = new ArrayList<>();
+
+	private final ArrayBlockingQueue<Component> addedRenderableQueue = new ArrayBlockingQueue<>(10000);
+	private final ArrayBlockingQueue<Component> removedRenderableQueue = new ArrayBlockingQueue<>(10000);
+	private final ArrayBlockingQueue<TransformObject> updateTransformQueue = new ArrayBlockingQueue<>(10000);
+	private final ArrayBlockingQueue<Component> updateRenderableQueue = new ArrayBlockingQueue<>(10000);
+	private final ArrayList<Component> addedRenderable = new ArrayList<>();
+	private final ArrayList<Component> removedRenderable = new ArrayList<>();
+	private final ArrayList<TransformObject> updateTransform = new ArrayList<>();
+	private final ArrayList<Component> updateRenderable = new ArrayList<>();
+	private final Window window;
 
 	private volatile boolean shutdown = false;
 
+	private final TreeUtils treeUtils = new TreeUtils();
+
 	public GameLoop(ArrayList<Scene> sceneLayers,
 	                WindowInitialisationParameters wip,
-	                DirectTransformController directTransformController,
-	                HashMap<String, ArrayList<GameObject>> layeredGameObjectsMap) {
+	                RegistryUpdater registryUpdater,
+	                GameBus gameBus) {
+
+		for (ComponentType componentType : ComponentType.values()) {
+			if (componentType.isRender()) {
+				renderComponentTypes.add(componentType);
+			}
+		}
 
 		this.supports.add(ManagementEvent.class);
+		this.supports.add(RenderableUpdateEvent.class);
+
+		this.gameBus = gameBus;
 
 		this.executorService = Executors.newCachedThreadPool();
-		this.gameBus = new GameBus();
+
+		this.renderingConversion = new RenderingConversion(gameBus);
+
 		this.sceneLayers = sceneLayers;
 		this.wip = wip;
-		this.layeredGameObjectsMap = layeredGameObjectsMap;
-
-		this.renderingConversion = new RenderingConversion();
 
 		ControllerState controllerState = new ControllerState();
 
@@ -68,18 +90,19 @@ public class GameLoop implements Subscribable {
 
 		this.gameBus.register(new ErrorSubscribable(System.err::println));
 
-		GameManagementInputController gameManagementInputController = new GameManagementInputController(gameBus);
+		this.inputSystem = new InputSystem(controllerState, gameBus);
 
-		this.inputSystem = new InputSystem(controllerState);
-		inputSystem.addControl(directTransformController);
-		inputSystem.addControl(gameManagementInputController);
+		registryUpdater.getGcsSystems().add((GcsSystem) inputSystem);
 
-		geSystems.add(inputSystem);
+		this.registryUpdater = registryUpdater;
+
+		this.window = new Window(sceneLayers, gameBus);
+
+		this.gameBus.register(window);
 
 	}
 
 	public void render() {
-		Window window = new Window(sceneLayers, gameBus);
 
 		long steps = 0;
 
@@ -94,29 +117,25 @@ public class GameLoop implements Subscribable {
 			return;
 		}
 
-		this.gameBus.register(window);
-
 		while (!window.shouldClose()) {
 			steps++;
 			window.render(steps);
 			deltaSeconds = (System.nanoTime() - lastTime) / 1000000000.0;
 			double fps = 1 / deltaSeconds;
 			if (fps < 50) {
-				window.setTitle("FPS: " + fps);
+				window.setTitle("FPS dropped below 50 to: " + fps);
 			}
 			lastTime = System.nanoTime();
 		}
 
 		window.close();
 		shutdown = true;
-		executorService.shutdownNow();
 	}
 
 	public void update() {
 
 		long step = 0;
 		long lastTime = System.nanoTime();
-		long startTime = System.nanoTime();
 
 		double deltaSeconds = 0;
 
@@ -132,24 +151,47 @@ public class GameLoop implements Subscribable {
 
 					step++;
 
-					// update systems
-					for (GESystem geSystem : geSystems) {
-						geSystem.update(layeredGameObjectsMap, now - startTime);
+					registryUpdater.run(step);
+
+					// build graphics engine model update message
+					// get all change lists that renderer is interested in
+					addedRenderableQueue.drainTo(addedRenderable);
+					removedRenderableQueue.drainTo(removedRenderable);
+					updateTransformQueue.drainTo(updateTransform);
+					updateRenderableQueue.drainTo(updateRenderable);
+
+					// first iterate over all transforms and check if they are dirty
+					// if they are, walk up the tree to find the highest transform that is dirty,
+					// then walk back down the tree, updating the transforms as you go, and sending
+					// updates to graphics engine about renderable component updates
+					for (TransformObject transformObject : updateTransform) {
+						// first check if current transform has flag set to true anymore as another walk may have resolved it
+						if (transformObject.isDirty()) {
+							TransformObject rootDirtyTransform = treeUtils.findRootDirtyTransform(transformObject);
+
+							// then resolve all transforms
+							treeUtils.resolveTransformsAndSend(rootDirtyTransform, Matrix4f.Identity, renderingConversion);
+						}
 					}
 
-					// convert to render-able objects and send to be rendered
-					for (Map.Entry<String, ArrayList<GameObject>> stringArrayListEntry : layeredGameObjectsMap.entrySet()) {
-
-						updateObjectTree(stringArrayListEntry.getValue());
-
-						RenderGraph renderLists = renderingConversion.createRenderLists(stringArrayListEntry.getValue(), step);
-
-						gameBus.dispatch(new RenderEvent(
-								new RenderEventData(step, stringArrayListEntry.getKey(),
-										renderLists),
-								RenderEventType.UPDATE
-						));
+					for (Component component : addedRenderable) {
+						renderingConversion.sendComponentCreateUpdate(component);
 					}
+
+					for (Component component : removedRenderable) {
+						renderingConversion.sendComponentDeleteUpdate(component);
+					}
+
+					// now iterate over the updated renderables and send type update changes to graphics
+					// engine
+					for (Component component : updateRenderable) {
+						renderingConversion.updateRenderableComponentType(component);
+					}
+
+					addedRenderable.clear();
+					removedRenderable.clear();
+					updateTransform.clear();
+					updateRenderable.clear();
 
 					deltaSeconds = 0;
 				}
@@ -163,14 +205,6 @@ public class GameLoop implements Subscribable {
 
 		}
 
-	}
-
-	// returns true if update occurred
-	private void updateObjectTree(List<GameObject> objectTree) {
-		for (GameObject gameObject : objectTree) {
-			gameObject.getGameObjectData().getUpdater().applyUpdates();
-			updateObjectTree(gameObject.getGameObjectData().getChildren());
-		}
 	}
 
 	public InputSystem getInputSystem() {
@@ -190,7 +224,15 @@ public class GameLoop implements Subscribable {
 
 		if (event.getType().equals(ManagementEventType.SHUTDOWN)) {
 			shutdown = true;
-			executorService.shutdown();
+			executorService.shutdownNow();
+		} else if (event.getType().equals(RenderableUpdateEventType.CREATE)) {
+			addedRenderableQueue.offer((Component) event.getData());
+		} else if (event.getType().equals(RenderableUpdateEventType.DESTROY)) {
+			removedRenderableQueue.offer((Component) event.getData());
+		} else if (event.getType().equals(RenderableUpdateEventType.UPDATE_TRANSFORM)) {
+			updateTransformQueue.offer((TransformObject) event.getData());
+		} else if (event.getType().equals(RenderableUpdateEventType.UPDATE_RENDERABLE)) {
+			updateRenderableQueue.offer((Component) event.getData());
 		}
 	}
 
@@ -199,7 +241,18 @@ public class GameLoop implements Subscribable {
 		return supports.contains(aClass);
 	}
 
-	public ArrayList<GESystem> getGESystems() {
-		return geSystems;
+	public void start() {
+
+		executorService.execute(() -> {
+			while(!Thread.currentThread().isInterrupted()) {
+				this.render();
+			}
+		});
+
+		executorService.execute(() -> {
+			while(!Thread.currentThread().isInterrupted()) {
+				this.update();
+			}
+		});
 	}
 }

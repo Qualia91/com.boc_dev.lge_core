@@ -19,7 +19,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 public class PickingSubscribable implements Subscribable, Runnable {
 
 	private final Set<Class<?>> supports = new HashSet<>();
-	private final ArrayBlockingQueue<Event<?>> eventQueue = new ArrayBlockingQueue<>(100);
+	private final ArrayBlockingQueue<Event<?>> eventQueue = new ArrayBlockingQueue<>(10);
 	private final ArrayList<Event<?>> drainToList = new ArrayList<>();
 	private final ArrayList<GameObject> gameObjects;
 
