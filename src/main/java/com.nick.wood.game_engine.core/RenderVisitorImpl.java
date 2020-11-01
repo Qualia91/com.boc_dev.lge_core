@@ -132,7 +132,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 				geometryObject.getUuid(),
 				new Model(geometryObject.getModelFile(), geometryObject.getMaterial()),
 				"MAIN",
-				newTransform
+				newTransform.transpose()
 		));
 	}
 
