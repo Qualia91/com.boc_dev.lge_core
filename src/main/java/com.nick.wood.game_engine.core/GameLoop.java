@@ -44,10 +44,10 @@ public class GameLoop implements Subscribable {
 	private final RegistryUpdater registryUpdater;
 	private final ArrayList<ComponentType> renderComponentTypes = new ArrayList<>();
 
-	private final ArrayBlockingQueue<Component> addedRenderableQueue = new ArrayBlockingQueue<>(10000);
-	private final ArrayBlockingQueue<Component> removedRenderableQueue = new ArrayBlockingQueue<>(10000);
-	private final ArrayBlockingQueue<TransformObject> updateTransformQueue = new ArrayBlockingQueue<>(10000);
-	private final ArrayBlockingQueue<Component> updateRenderableQueue = new ArrayBlockingQueue<>(10000);
+	private final ArrayBlockingQueue<Component> addedRenderableQueue = new ArrayBlockingQueue<>(1_000_000);
+	private final ArrayBlockingQueue<Component> removedRenderableQueue = new ArrayBlockingQueue<>(1_000_000);
+	private final ArrayBlockingQueue<TransformObject> updateTransformQueue = new ArrayBlockingQueue<>(1_000_000);
+	private final ArrayBlockingQueue<Component> updateRenderableQueue = new ArrayBlockingQueue<>(1_000_000);
 	private final ArrayList<Component> addedRenderable = new ArrayList<>();
 	private final ArrayList<Component> removedRenderable = new ArrayList<>();
 	private final ArrayList<TransformObject> updateTransform = new ArrayList<>();
@@ -121,10 +121,7 @@ public class GameLoop implements Subscribable {
 			steps++;
 			window.render(steps);
 			deltaSeconds = (System.nanoTime() - lastTime) / 1000000000.0;
-			double fps = 1 / deltaSeconds;
-			if (fps < 50) {
-				window.setTitle("FPS dropped below 50 to: " + fps);
-			}
+			window.setTitle("FPS dropped below 50 to: " + (1 / deltaSeconds));
 			lastTime = System.nanoTime();
 		}
 
@@ -133,6 +130,8 @@ public class GameLoop implements Subscribable {
 	}
 
 	public void update() {
+
+
 
 		long step = 0;
 		long lastTime = System.nanoTime();
