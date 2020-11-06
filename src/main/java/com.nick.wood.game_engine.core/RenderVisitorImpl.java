@@ -5,11 +5,17 @@ import com.nick.wood.game_engine.gcs_model.gcs.Component;
 import com.nick.wood.game_engine.gcs_model.gcs.RenderVisitor;
 import com.nick.wood.game_engine.gcs_model.generated.components.*;
 import com.nick.wood.graphics_library.communication.*;
+import com.nick.wood.graphics_library.objects.lighting.*;
 import com.nick.wood.graphics_library.objects.Camera;
 import com.nick.wood.graphics_library.objects.CameraType;
+import com.nick.wood.graphics_library.objects.materials.BasicMaterial;
+import com.nick.wood.graphics_library.objects.materials.Material;
 import com.nick.wood.graphics_library.objects.mesh_objects.Model;
 import com.nick.wood.graphics_library.objects.render_scene.InstanceObject;
 import com.nick.wood.maths.objects.matrix.Matrix4f;
+import com.nick.wood.maths.objects.vector.Vec3f;
+
+import java.util.UUID;
 
 public class RenderVisitorImpl implements RenderVisitor {
 
@@ -84,12 +90,85 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 	@Override
 	public void sendCreateUpdate(LightObject lightObject) {
+		resolveTransforms(lightObject);
 
+		Light light;
+
+		switch (lightObject.getLightingType()) {
+
+			case POINT:
+				light = new PointLight(
+						lightObject.getUuid(),
+						lightObject.getColour(),
+						lightObject.getIntensity(),
+						new Attenuation(lightObject.getAttenuationConstant(), lightObject.getAttenuationLinear(), lightObject.getAttenuationExponent())
+				);
+				break;
+			case SPOT:
+				PointLight pointLight = new PointLight(
+						lightObject.getUuid(),
+						lightObject.getColour(),
+						lightObject.getIntensity(),
+						new Attenuation(lightObject.getAttenuationConstant(), lightObject.getAttenuationLinear(), lightObject.getAttenuationExponent())
+				);
+				light = new SpotLight(
+						lightObject.getUuid(),
+						pointLight,
+						lightObject.getDirection(),
+						lightObject.getConeAngle()
+				);
+				break;
+			default:
+				light = new DirectionalLight(
+						lightObject.getUuid(),
+						lightObject.getColour(),
+						lightObject.getDirection(),
+						lightObject.getIntensity()
+				);
+				break;
+		}
+
+		// at this point all transforms for current object should be resolved...
+		gameBus.dispatch(new LightCreateEvent(
+				new InstanceObject(lightObject.getUuid(), lightObject.getGlobalTransform()),
+				light,
+				"MAIN"
+		));
 	}
 
 	@Override
 	public void sendCreateUpdate(SkyBoxObject skyBoxObject) {
 
+		UUID materialUUID = UUID.randomUUID();
+		Model model;
+		Material material = new BasicMaterial(materialUUID, skyBoxObject.getTexture());
+
+		gameBus.dispatch(new TextureCreateEvent(
+				skyBoxObject.getTexture()
+		));
+
+		gameBus.dispatch(new MaterialCreateEvent(
+				materialUUID,
+				material,
+				"MAIN"
+		));
+
+		switch (skyBoxObject.getSkyboxType()) {
+
+			case SPHERE:
+				model = new Model("DEFAULT_SPHERE_SKYBOX", materialUUID);
+				break;
+			case CUBE:
+			default:
+				model = new Model("DEFAULT_CUBE_SKYBOX", materialUUID);
+				break;
+		}
+
+		gameBus.dispatch(new SkyboxCreateEvent(
+				new InstanceObject(skyBoxObject.getUuid(), Matrix4f.Scale(Vec3f.ONE.scale(skyBoxObject.getDistance()))),
+				model,
+				"MAIN"
+		));
 	}
 
 	@Override
@@ -152,7 +231,11 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 	@Override
 	public void sendInstanceUpdate(LightObject lightObject, Matrix4f newTransform) {
-
+		gameBus.dispatch(new LightUpdateEvent(
+				lightObject.getUuid(),
+				"MAIN",
+				newTransform
+		));
 	}
 
 	@Override

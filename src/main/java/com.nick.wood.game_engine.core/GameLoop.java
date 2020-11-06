@@ -114,14 +114,15 @@ public class GameLoop implements Subscribable {
 			window.init(wip);
 		} catch (IOException e) {
 			gameBus.dispatch(new ErrorEvent(e, ErrorEventType.CRITICAL));
-			return;
+			window.close();
+			shutdown = true;
 		}
 
 		while (!window.shouldClose()) {
 			steps++;
 			window.render(steps);
 			deltaSeconds = (System.nanoTime() - lastTime) / 1000000000.0;
-			window.setTitle("FPS dropped below 50 to: " + (1 / deltaSeconds));
+			window.setTitle("FPS: " + Math.round(1.0 / deltaSeconds));
 			lastTime = System.nanoTime();
 		}
 

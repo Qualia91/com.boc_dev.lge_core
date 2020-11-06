@@ -2,9 +2,9 @@ package com.nick.wood.game_engine.core;
 
 import com.nick.wood.game_engine.gcs_model.gcs.Component;
 import com.nick.wood.game_engine.gcs_model.generated.components.*;
-import com.nick.wood.graphics_library.materials.BasicMaterial;
-import com.nick.wood.graphics_library.materials.Material;
-import com.nick.wood.graphics_library.materials.NormalMaterial;
+import com.nick.wood.graphics_library.objects.materials.BasicMaterial;
+import com.nick.wood.graphics_library.objects.materials.Material;
+import com.nick.wood.graphics_library.objects.materials.NormalMaterial;
 
 public class MaterialBuilder {
 	public Material build(MaterialObject materialObject) {
