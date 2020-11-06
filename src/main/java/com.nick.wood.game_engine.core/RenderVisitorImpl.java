@@ -4,6 +4,7 @@ import com.nick.wood.game_engine.event_bus.busses.GameBus;
 import com.nick.wood.game_engine.gcs_model.gcs.Component;
 import com.nick.wood.game_engine.gcs_model.gcs.RenderVisitor;
 import com.nick.wood.game_engine.gcs_model.generated.components.*;
+import com.nick.wood.game_engine.systems.generation.TerrainGeneration;
 import com.nick.wood.graphics_library.communication.*;
 import com.nick.wood.graphics_library.objects.lighting.*;
 import com.nick.wood.graphics_library.objects.Camera;
@@ -206,6 +207,32 @@ public class RenderVisitorImpl implements RenderVisitor {
 	}
 
 	@Override
+	public void sendCreateUpdate(TerrainChunkObject terrainChunkObject) {
+
+		gameBus.dispatch(new HeightMapMeshCreateEvent(
+				terrainChunkObject.getName(),
+				terrainChunkObject.getGrid(),
+				terrainChunkObject.getCellSpace()
+		));
+
+		gameBus.dispatch(new GeometryCreateEvent(
+				new InstanceObject(terrainChunkObject.getUuid(), Matrix4f.Translation(terrainChunkObject.getOrigin()).transpose()),
+				new Model(terrainChunkObject.getName(), findMaterialUUID(terrainChunkObject)),
+				"MAIN"
+		));
+	}
+
+	private UUID findMaterialUUID(Component component) {
+		UUID materialUUID = null;
+		if (component.getParent() != null && component.getParent().getComponentType().equals(ComponentType.TERRAINGENERATION)) {
+			TerrainGenerationObject terrainGenerationObject = (TerrainGenerationObject) component.getParent();
+			return terrainGenerationObject.getMaterialID();
+		}
+
+		return null;
+	}
+
+	@Override
 	public void sendInstanceUpdate(GeometryObject geometryObject, Matrix4f newTransform) {
 		gameBus.dispatch(new GeometryUpdateEvent(
 				geometryObject.getUuid(),
@@ -259,6 +286,11 @@ public class RenderVisitorImpl implements RenderVisitor {
 	}
 
 	@Override
+	public void sendInstanceUpdate(TerrainChunkObject terrainChunkObject, Matrix4f translation) {
+
+	}
+
+	@Override
 	public void sendDeleteUpdate(GeometryObject geometryObject) {
 		gameBus.dispatch(new GeometryRemoveEvent(
 				new InstanceObject(geometryObject.getUuid(), Matrix4f.Identity),
@@ -299,6 +331,21 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 	@Override
 	public void sendDeleteUpdate(NormalMapObject normalMapObject) {
+
+	}
+
+	@Override
+	public void sendDeleteUpdate(TerrainChunkObject terrainChunkObject) {
+
+		gameBus.dispatch(new HeightMapMeshRemoveEvent(
+				terrainChunkObject.getName()
+		));
+
+		gameBus.dispatch(new GeometryRemoveEvent(
+				new InstanceObject(terrainChunkObject.getUuid(), Matrix4f.Translation(terrainChunkObject.getOrigin()).transpose()),
+				new Model(terrainChunkObject.getName(), findMaterialUUID(terrainChunkObject)),
+				"MAIN"
+		));
 
 	}
 }
