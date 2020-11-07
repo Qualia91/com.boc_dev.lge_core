@@ -4,7 +4,6 @@ import com.nick.wood.game_engine.event_bus.busses.GameBus;
 import com.nick.wood.game_engine.gcs_model.gcs.Component;
 import com.nick.wood.game_engine.gcs_model.gcs.RenderVisitor;
 import com.nick.wood.game_engine.gcs_model.generated.components.*;
-import com.nick.wood.game_engine.systems.generation.TerrainGeneration;
 import com.nick.wood.graphics_library.communication.*;
 import com.nick.wood.graphics_library.objects.lighting.*;
 import com.nick.wood.graphics_library.objects.Camera;
@@ -16,7 +15,7 @@ import com.nick.wood.graphics_library.objects.render_scene.InstanceObject;
 import com.nick.wood.maths.objects.matrix.Matrix4f;
 import com.nick.wood.maths.objects.vector.Vec3f;
 
-import java.util.UUID;
+import java.util.*;
 
 public class RenderVisitorImpl implements RenderVisitor {
 
@@ -25,10 +24,70 @@ public class RenderVisitorImpl implements RenderVisitor {
 	private MaterialBuilder materialBuilder;
 
 
+	private final HashMap<String, HashSet<GeometryObject>> geometryCreateEventsMap = new HashMap<>();
+	private final HashMap<String, HashSet<InstanceObject>> geometryUpdateEventsMap = new HashMap<>();
+	private final HashMap<String, HashSet<UUID>> geometryDeleteEventsMap = new HashMap<>();
+
+
 	public RenderVisitorImpl(GameBus gameBus) {
 		this.gameBus = gameBus;
 		this.treeUtils = new TreeUtils();
 		this.materialBuilder = new MaterialBuilder();
+	}
+
+	public void send() {
+
+		// do delete first so it only deletes objects already in the scene
+		for (Map.Entry<String, HashSet<UUID>> stringArrayListEntry : geometryDeleteEventsMap.entrySet()) {
+
+			gameBus.dispatch(new GeometryRemoveEvent(
+					stringArrayListEntry.getValue(),
+					stringArrayListEntry.getKey(),
+					"MAIN"
+			));
+
+		}
+
+		geometryDeleteEventsMap.clear();
+
+		for (Map.Entry<String, HashSet<GeometryObject>> stringGeometryObjectEntry : geometryCreateEventsMap.entrySet()) {
+
+			if (!stringGeometryObjectEntry.getValue().isEmpty()) {
+
+				ArrayList<InstanceObject> instanceObjects = new ArrayList<>(stringGeometryObjectEntry.getValue().size());
+
+				UUID material = null;
+				String modelFile = null;
+
+				for (GeometryObject geometryObject : stringGeometryObjectEntry.getValue()) {
+					material = geometryObject.getMaterial();
+					modelFile = geometryObject.getModelFile();
+					instanceObjects.add(new InstanceObject(geometryObject.getUuid(), geometryObject.getGlobalTransform().transpose()));
+
+				}
+
+				gameBus.dispatch(new GeometryCreateEvent(
+						instanceObjects,
+						new Model(modelFile, material),
+						"MAIN"
+				));
+
+			}
+		}
+
+		geometryCreateEventsMap.clear();
+
+		for (Map.Entry<String, HashSet<InstanceObject>> stringArrayListEntry : geometryUpdateEventsMap.entrySet()) {
+
+			gameBus.dispatch(new GeometryUpdateEvent(
+					stringArrayListEntry.getKey(),
+					stringArrayListEntry.getValue(),
+					"MAIN"
+			));
+
+		}
+
+		geometryUpdateEventsMap.clear();
 	}
 
 	private void resolveTransforms(Component component) {
@@ -52,11 +111,16 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 		resolveTransforms(geometryObject);
 
-		gameBus.dispatch(new GeometryCreateEvent(
-				new InstanceObject(geometryObject.getUuid(), geometryObject.getGlobalTransform().transpose()),
-				new Model(geometryObject.getModelFile(), geometryObject.getMaterial()),
-				"MAIN"
-		));
+		String modelStringId = geometryObject.getModelFile() + geometryObject.getMaterial().toString();
+
+		if (geometryCreateEventsMap.containsKey(modelStringId)) {
+			geometryCreateEventsMap.get(modelStringId).add(geometryObject);
+		} else {
+			HashSet<GeometryObject> instances = new HashSet<>();
+			instances.add(geometryObject);
+			geometryCreateEventsMap.put(modelStringId, instances);
+		}
+
 	}
 
 	public void sendCreateUpdate(MaterialObject materialObject) {
@@ -215,11 +279,19 @@ public class RenderVisitorImpl implements RenderVisitor {
 				terrainChunkObject.getCellSpace()
 		));
 
-		gameBus.dispatch(new GeometryCreateEvent(
-				new InstanceObject(terrainChunkObject.getUuid(), Matrix4f.Translation(terrainChunkObject.getOrigin()).transpose()),
-				new Model(terrainChunkObject.getName(), findMaterialUUID(terrainChunkObject)),
-				"MAIN"
-		));
+//		if (geometryCreateEventsMap.containsKey(terrainChunkObject.getName())) {
+//			geometryCreateEventsMap.get(terrainChunkObject.getName()).add(geometryObject);
+//		} else {
+//			ArrayList<GeometryObject> instances = new ArrayList<>();
+//			instances.add(geometryObject);
+//			geometryCreateEventsMap.put(modelStringId, instances);
+//		}
+//
+//		gameBus.dispatch(new GeometryCreateEvent(
+//				new InstanceObject(terrainChunkObject.getUuid(), Matrix4f.Translation(terrainChunkObject.getOrigin()).transpose()),
+//				new Model(terrainChunkObject.getName(), findMaterialUUID(terrainChunkObject)),
+//				"MAIN"
+//		));
 	}
 
 	private UUID findMaterialUUID(Component component) {
@@ -234,12 +306,23 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 	@Override
 	public void sendInstanceUpdate(GeometryObject geometryObject, Matrix4f newTransform) {
-		gameBus.dispatch(new GeometryUpdateEvent(
-				geometryObject.getUuid(),
-				new Model(geometryObject.getModelFile(), geometryObject.getMaterial()),
-				"MAIN",
-				newTransform.transpose()
-		));
+
+		String modelStringId = geometryObject.getModelFile() + geometryObject.getMaterial().toString();
+
+		if (geometryUpdateEventsMap.containsKey(modelStringId)) {
+			geometryUpdateEventsMap.get(modelStringId).add(new InstanceObject(geometryObject.getUuid(), newTransform.transpose()));
+		} else {
+			HashSet<InstanceObject> instances = new HashSet<>();
+			instances.add(new InstanceObject(geometryObject.getUuid(), newTransform.transpose()));
+			geometryUpdateEventsMap.put(modelStringId, instances);
+		}
+
+//		gameBus.dispatch(new GeometryUpdateEvent(
+//				geometryObject.getUuid(),
+//				new Model(geometryObject.getModelFile(), geometryObject.getMaterial()),
+//				"MAIN",
+//				newTransform.transpose()
+//		));
 	}
 
 	@Override
@@ -292,11 +375,17 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 	@Override
 	public void sendDeleteUpdate(GeometryObject geometryObject) {
-		gameBus.dispatch(new GeometryRemoveEvent(
-				new InstanceObject(geometryObject.getUuid(), Matrix4f.Identity),
-				new Model(geometryObject.getModelFile(), geometryObject.getMaterial()),
-				"MAIN"
-		));
+
+		String modelStringId = geometryObject.getModelFile() + geometryObject.getMaterial().toString();
+
+		if (geometryDeleteEventsMap.containsKey(modelStringId)) {
+			geometryDeleteEventsMap.get(modelStringId).add(geometryObject.getUuid());
+		} else {
+			HashSet<UUID> instances = new HashSet<>();
+			instances.add(geometryObject.getUuid());
+			geometryDeleteEventsMap.put(modelStringId, instances);
+		}
+
 	}
 
 	@Override
@@ -341,11 +430,11 @@ public class RenderVisitorImpl implements RenderVisitor {
 				terrainChunkObject.getName()
 		));
 
-		gameBus.dispatch(new GeometryRemoveEvent(
-				new InstanceObject(terrainChunkObject.getUuid(), Matrix4f.Translation(terrainChunkObject.getOrigin()).transpose()),
-				new Model(terrainChunkObject.getName(), findMaterialUUID(terrainChunkObject)),
-				"MAIN"
-		));
+//		gameBus.dispatch(new GeometryRemoveEvent(
+//				new InstanceObject(terrainChunkObject.getUuid(), Matrix4f.Translation(terrainChunkObject.getOrigin()).transpose()),
+//				new Model(terrainChunkObject.getName(), findMaterialUUID(terrainChunkObject)),
+//				"MAIN"
+//		));
 
 	}
 }

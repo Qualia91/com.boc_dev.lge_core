@@ -188,6 +188,8 @@ public class GameLoop implements Subscribable {
 						renderingConversion.updateRenderableComponentType(component);
 					}
 
+					renderingConversion.send();
+
 					addedRenderable.clear();
 					removedRenderable.clear();
 					updateTransform.clear();

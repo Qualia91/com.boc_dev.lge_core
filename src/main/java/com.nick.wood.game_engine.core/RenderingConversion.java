@@ -16,6 +16,10 @@ public class RenderingConversion {
 
 	}
 
+	public void send() {
+		renderVisitorImpl.send();
+	}
+
 	public void updateRenderableComponentType(Component component) {
 
 		// delete last one, then add new one. easiest way
@@ -34,4 +38,5 @@ public class RenderingConversion {
 	public void sendComponentCreateUpdate(Component component) {
 		component.createRenderable(renderVisitorImpl);
 	}
+
 }
