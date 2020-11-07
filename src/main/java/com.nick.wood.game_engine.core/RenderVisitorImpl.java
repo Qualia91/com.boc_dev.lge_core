@@ -27,6 +27,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 	private final HashMap<String, HashSet<GeometryObject>> geometryCreateEventsMap = new HashMap<>();
 	private final HashMap<String, HashSet<InstanceObject>> geometryUpdateEventsMap = new HashMap<>();
 	private final HashMap<String, HashSet<UUID>> geometryDeleteEventsMap = new HashMap<>();
+	private String layerName = "DEFAULT";
 
 
 	public RenderVisitorImpl(GameBus gameBus) {
@@ -43,7 +44,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 			gameBus.dispatch(new GeometryRemoveEvent(
 					stringArrayListEntry.getValue(),
 					stringArrayListEntry.getKey(),
-					"MAIN"
+					layerName
 			));
 
 		}
@@ -69,7 +70,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 				gameBus.dispatch(new GeometryCreateEvent(
 						instanceObjects,
 						new Model(modelFile, material),
-						"MAIN"
+						layerName
 				));
 
 			}
@@ -82,7 +83,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 			gameBus.dispatch(new GeometryUpdateEvent(
 					stringArrayListEntry.getKey(),
 					stringArrayListEntry.getValue(),
-					"MAIN"
+					layerName
 			));
 
 		}
@@ -128,7 +129,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 		gameBus.dispatch(new MaterialCreateEvent(
 				materialObject.getUuid(),
 				materialBuilder.build(materialObject),
-				"MAIN"
+				layerName
 		));
 	}
 
@@ -149,7 +150,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 						cameraObject.getNear(),
 						cameraObject.getFar()
 				),
-				"MAIN"
+				layerName
 		));
 	}
 
@@ -197,7 +198,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 		gameBus.dispatch(new LightCreateEvent(
 				new InstanceObject(lightObject.getUuid(), lightObject.getGlobalTransform()),
 				light,
-				"MAIN"
+				layerName
 		));
 	}
 
@@ -215,7 +216,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 		gameBus.dispatch(new MaterialCreateEvent(
 				materialUUID,
 				material,
-				"MAIN"
+				layerName
 		));
 
 		switch (skyBoxObject.getSkyboxType()) {
@@ -232,7 +233,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 		gameBus.dispatch(new SkyboxCreateEvent(
 				new InstanceObject(skyBoxObject.getUuid(), Matrix4f.Scale(Vec3f.ONE.scale(skyBoxObject.getDistance()))),
 				model,
-				"MAIN"
+				layerName
 		));
 	}
 
@@ -290,7 +291,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 //		gameBus.dispatch(new GeometryCreateEvent(
 //				new InstanceObject(terrainChunkObject.getUuid(), Matrix4f.Translation(terrainChunkObject.getOrigin()).transpose()),
 //				new Model(terrainChunkObject.getName(), findMaterialUUID(terrainChunkObject)),
-//				"MAIN"
+//				layerName
 //		));
 	}
 
@@ -320,7 +321,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 //		gameBus.dispatch(new GeometryUpdateEvent(
 //				geometryObject.getUuid(),
 //				new Model(geometryObject.getModelFile(), geometryObject.getMaterial()),
-//				"MAIN",
+//				layerName,
 //				newTransform.transpose()
 //		));
 	}
@@ -334,7 +335,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 	public void sendInstanceUpdate(CameraObject cameraObject, Matrix4f newTransform) {
 		gameBus.dispatch(new CameraUpdateEvent(
 				cameraObject.getName(),
-				"MAIN",
+				layerName,
 				newTransform
 		));
 	}
@@ -343,7 +344,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 	public void sendInstanceUpdate(LightObject lightObject, Matrix4f newTransform) {
 		gameBus.dispatch(new LightUpdateEvent(
 				lightObject.getUuid(),
-				"MAIN",
+				layerName,
 				newTransform
 		));
 	}
@@ -433,8 +434,12 @@ public class RenderVisitorImpl implements RenderVisitor {
 //		gameBus.dispatch(new GeometryRemoveEvent(
 //				new InstanceObject(terrainChunkObject.getUuid(), Matrix4f.Translation(terrainChunkObject.getOrigin()).transpose()),
 //				new Model(terrainChunkObject.getName(), findMaterialUUID(terrainChunkObject)),
-//				"MAIN"
+//				layerName
 //		));
 
+	}
+
+	public void setLayerName(String layerName) {
+		this.layerName = layerName;
 	}
 }

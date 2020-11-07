@@ -16,7 +16,7 @@ import com.nick.wood.game_engine.gcs_model.gcs.Component;
 import com.nick.wood.game_engine.gcs_model.generated.components.ComponentType;
 import com.nick.wood.game_engine.gcs_model.generated.components.TransformObject;
 import com.nick.wood.game_engine.gcs_model.systems.GcsSystem;
-import com.nick.wood.game_engine.model.input.ControllerState;
+import com.nick.wood.game_engine.systems.control.ControllerState;
 import com.nick.wood.game_engine.systems.control.GameManagementInputController;
 import com.nick.wood.game_engine.systems.control.InputSystem;
 import com.nick.wood.graphics_library.Window;
@@ -37,11 +37,9 @@ public class GameLoop implements Subscribable {
 	private static final float FPS = 60;
 	private final WindowInitialisationParameters wip;
 	private final RenderingConversion renderingConversion;
-	private final GameBus gameBus;
+	private final GameBus renderGameBus;
 	private final ExecutorService executorService;
-	private final ArrayList<Scene> sceneLayers;
-	private final InputSystem inputSystem;
-	private final RegistryUpdater registryUpdater;
+	private final ArrayList<SceneLayer> sceneLayers;
 	private final ArrayList<ComponentType> renderComponentTypes = new ArrayList<>();
 
 	private final ArrayBlockingQueue<Component> addedRenderableQueue = new ArrayBlockingQueue<>(1_000_000);
@@ -58,10 +56,8 @@ public class GameLoop implements Subscribable {
 
 	private final TreeUtils treeUtils = new TreeUtils();
 
-	public GameLoop(ArrayList<Scene> sceneLayers,
-	                WindowInitialisationParameters wip,
-	                RegistryUpdater registryUpdater,
-	                GameBus gameBus) {
+	public GameLoop(ArrayList<SceneLayer> sceneLayers,
+	                WindowInitialisationParameters wip) {
 
 		for (ComponentType componentType : ComponentType.values()) {
 			if (componentType.isRender()) {
@@ -72,33 +68,34 @@ public class GameLoop implements Subscribable {
 		this.supports.add(ManagementEvent.class);
 		this.supports.add(RenderableUpdateEvent.class);
 
-		this.gameBus = gameBus;
+		this.renderGameBus = new GameBus();
+		this.renderGameBus.register(this);
 
 		this.executorService = Executors.newCachedThreadPool();
 
-		this.renderingConversion = new RenderingConversion(gameBus);
+		this.renderingConversion = new RenderingConversion(renderGameBus);
 
 		this.sceneLayers = sceneLayers;
 		this.wip = wip;
 
 		ControllerState controllerState = new ControllerState();
-
 		this.executorService.submit(controllerState);
+		this.renderGameBus.register(controllerState);
 
-		this.gameBus.register(controllerState);
-		this.gameBus.register(this);
+		this.renderGameBus.register(new ErrorSubscribable(System.err::println));
 
-		this.gameBus.register(new ErrorSubscribable(System.err::println));
+		ArrayList<Scene> scenes = new ArrayList<>();
+		for (SceneLayer sceneLayer : sceneLayers) {
+			sceneLayer.getGameBus().register(this);
+			sceneLayer.getGameBus().register(controllerState);
+			InputSystem inputSystem = new InputSystem(controllerState, sceneLayer.getGameBus());
+			sceneLayer.getGcsSystems().add((GcsSystem) inputSystem);
+			scenes.add(sceneLayer.getScene());
+		}
 
-		this.inputSystem = new InputSystem(controllerState, gameBus);
+		this.window = new Window(scenes, renderGameBus);
 
-		registryUpdater.getGcsSystems().add((GcsSystem) inputSystem);
-
-		this.registryUpdater = registryUpdater;
-
-		this.window = new Window(sceneLayers, gameBus);
-
-		this.gameBus.register(window);
+		this.renderGameBus.register(window);
 
 	}
 
@@ -113,7 +110,7 @@ public class GameLoop implements Subscribable {
 		try {
 			window.init(wip);
 		} catch (IOException e) {
-			gameBus.dispatch(new ErrorEvent(e, ErrorEventType.CRITICAL));
+			renderGameBus.dispatch(new ErrorEvent(e, ErrorEventType.CRITICAL));
 			window.close();
 			shutdown = true;
 		}
@@ -151,49 +148,55 @@ public class GameLoop implements Subscribable {
 
 					step++;
 
-					registryUpdater.run(step);
+					for (SceneLayer sceneLayer : sceneLayers) {
 
-					// build graphics engine model update message
-					// get all change lists that renderer is interested in
-					addedRenderableQueue.drainTo(addedRenderable);
-					removedRenderableQueue.drainTo(removedRenderable);
-					updateTransformQueue.drainTo(updateTransform);
-					updateRenderableQueue.drainTo(updateRenderable);
+						sceneLayer.getRegistryUpdater().run(step);
 
-					// first iterate over all transforms and check if they are dirty
-					// if they are, walk up the tree to find the highest transform that is dirty,
-					// then walk back down the tree, updating the transforms as you go, and sending
-					// updates to graphics engine about renderable component updates
-					for (TransformObject transformObject : updateTransform) {
-						// first check if current transform has flag set to true anymore as another walk may have resolved it
-						if (transformObject.isDirty()) {
-							TransformObject rootDirtyTransform = treeUtils.findRootDirtyTransform(transformObject);
+						// build graphics engine model update message
+						// get all change lists that renderer is interested in
+						addedRenderableQueue.drainTo(addedRenderable);
+						removedRenderableQueue.drainTo(removedRenderable);
+						updateTransformQueue.drainTo(updateTransform);
+						updateRenderableQueue.drainTo(updateRenderable);
 
-							// then resolve all transforms
-							treeUtils.resolveTransformsAndSend(rootDirtyTransform, Matrix4f.Identity, renderingConversion);
+						renderingConversion.setLayerName(sceneLayer.getLayerName());
+
+						// first iterate over all transforms and check if they are dirty
+						// if they are, walk up the tree to find the highest transform that is dirty,
+						// then walk back down the tree, updating the transforms as you go, and sending
+						// updates to graphics engine about renderable component updates
+						for (TransformObject transformObject : updateTransform) {
+							// first check if current transform has flag set to true anymore as another walk may have resolved it
+							if (transformObject.isDirty()) {
+								TransformObject rootDirtyTransform = treeUtils.findRootDirtyTransform(transformObject);
+
+								// then resolve all transforms
+								treeUtils.resolveTransformsAndSend(rootDirtyTransform, Matrix4f.Identity, renderingConversion);
+							}
 						}
+
+						for (Component component : addedRenderable) {
+							renderingConversion.sendComponentCreateUpdate(component);
+						}
+
+						for (Component component : removedRenderable) {
+							renderingConversion.sendComponentDeleteUpdate(component);
+						}
+
+						// now iterate over the updated renderables and send type update changes to graphics
+						// engine
+						for (Component component : updateRenderable) {
+							renderingConversion.updateRenderableComponentType(component);
+						}
+
+						renderingConversion.send();
+
+						addedRenderable.clear();
+						removedRenderable.clear();
+						updateTransform.clear();
+						updateRenderable.clear();
+
 					}
-
-					for (Component component : addedRenderable) {
-						renderingConversion.sendComponentCreateUpdate(component);
-					}
-
-					for (Component component : removedRenderable) {
-						renderingConversion.sendComponentDeleteUpdate(component);
-					}
-
-					// now iterate over the updated renderables and send type update changes to graphics
-					// engine
-					for (Component component : updateRenderable) {
-						renderingConversion.updateRenderableComponentType(component);
-					}
-
-					renderingConversion.send();
-
-					addedRenderable.clear();
-					removedRenderable.clear();
-					updateTransform.clear();
-					updateRenderable.clear();
 
 					deltaSeconds = 0;
 				}
@@ -207,14 +210,6 @@ public class GameLoop implements Subscribable {
 
 		}
 
-	}
-
-	public InputSystem getInputSystem() {
-		return inputSystem;
-	}
-
-	public Bus getGameBus() {
-		return gameBus;
 	}
 
 	public ExecutorService getExecutorService() {

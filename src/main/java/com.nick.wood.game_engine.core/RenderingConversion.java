@@ -39,4 +39,7 @@ public class RenderingConversion {
 		component.createRenderable(renderVisitorImpl);
 	}
 
+	public void setLayerName(String layerName) {
+		renderVisitorImpl.setLayerName(layerName);
+	}
 }
