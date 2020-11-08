@@ -26,6 +26,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 
 	private final HashMap<String, HashSet<GeometryObject>> geometryCreateEventsMap = new HashMap<>();
+	private final HashMap<String, HashSet<TerrainChunkObject>> terrainCreateEventsMap = new HashMap<>();
 	private final HashMap<String, HashSet<InstanceObject>> geometryUpdateEventsMap = new HashMap<>();
 	private final HashMap<String, HashSet<UUID>> geometryDeleteEventsMap = new HashMap<>();
 	private String layerName = "DEFAULT";
@@ -78,6 +79,31 @@ public class RenderVisitorImpl implements RenderVisitor {
 		}
 
 		geometryCreateEventsMap.clear();
+
+		for (Map.Entry<String, HashSet<TerrainChunkObject>> stringHashSetEntry : terrainCreateEventsMap.entrySet()) {
+
+			if (!stringHashSetEntry.getValue().isEmpty()) {
+
+				ArrayList<InstanceObject> instanceObjects = new ArrayList<>(stringHashSetEntry.getValue().size());
+
+				TerrainChunkObject anyTerrainChunkObject = null;
+
+				for (TerrainChunkObject terrainChunkObject : stringHashSetEntry.getValue()) {
+					anyTerrainChunkObject = terrainChunkObject;
+					instanceObjects.add(new InstanceObject(terrainChunkObject.getUuid(), Matrix4f.Translation(terrainChunkObject.getOrigin()).transpose()));
+
+				}
+
+				gameBus.dispatch(new GeometryCreateEvent(
+						instanceObjects,
+						new Model(anyTerrainChunkObject.getName(), findMaterialUUID(anyTerrainChunkObject)),
+						layerName
+				));
+
+			}
+		}
+
+		terrainCreateEventsMap.clear();
 
 		for (Map.Entry<String, HashSet<InstanceObject>> stringArrayListEntry : geometryUpdateEventsMap.entrySet()) {
 
@@ -282,19 +308,15 @@ public class RenderVisitorImpl implements RenderVisitor {
 				terrainChunkObject.getCellSpace()
 		));
 
-//		if (geometryCreateEventsMap.containsKey(terrainChunkObject.getName())) {
-//			geometryCreateEventsMap.get(terrainChunkObject.getName()).add(geometryObject);
-//		} else {
-//			ArrayList<GeometryObject> instances = new ArrayList<>();
-//			instances.add(geometryObject);
-//			geometryCreateEventsMap.put(modelStringId, instances);
-//		}
-//
-//		gameBus.dispatch(new GeometryCreateEvent(
-//				new InstanceObject(terrainChunkObject.getUuid(), Matrix4f.Translation(terrainChunkObject.getOrigin()).transpose()),
-//				new Model(terrainChunkObject.getName(), findMaterialUUID(terrainChunkObject)),
-//				layerName
-//		));
+
+		if (terrainCreateEventsMap.containsKey(terrainChunkObject.getName())) {
+			terrainCreateEventsMap.get(terrainChunkObject.getName()).add(terrainChunkObject);
+		} else {
+			HashSet<TerrainChunkObject> instances = new HashSet<>();
+			instances.add(terrainChunkObject);
+			terrainCreateEventsMap.put(terrainChunkObject.getName(), instances);
+		}
+
 	}
 
 	private UUID findMaterialUUID(Component component) {
@@ -320,12 +342,6 @@ public class RenderVisitorImpl implements RenderVisitor {
 			geometryUpdateEventsMap.put(modelStringId, instances);
 		}
 
-//		gameBus.dispatch(new GeometryUpdateEvent(
-//				geometryObject.getUuid(),
-//				new Model(geometryObject.getModelFile(), geometryObject.getMaterial()),
-//				layerName,
-//				newTransform.transpose()
-//		));
 	}
 
 	@Override
@@ -433,11 +449,15 @@ public class RenderVisitorImpl implements RenderVisitor {
 				terrainChunkObject.getName()
 		));
 
-//		gameBus.dispatch(new GeometryRemoveEvent(
-//				new InstanceObject(terrainChunkObject.getUuid(), Matrix4f.Translation(terrainChunkObject.getOrigin()).transpose()),
-//				new Model(terrainChunkObject.getName(), findMaterialUUID(terrainChunkObject)),
-//				layerName
-//		));
+		String modelStringId = terrainChunkObject.getName();
+
+		if (geometryDeleteEventsMap.containsKey(modelStringId)) {
+			geometryDeleteEventsMap.get(modelStringId).add(terrainChunkObject.getUuid());
+		} else {
+			HashSet<UUID> instances = new HashSet<>();
+			instances.add(terrainChunkObject.getUuid());
+			geometryDeleteEventsMap.put(modelStringId, instances);
+		}
 
 	}
 
