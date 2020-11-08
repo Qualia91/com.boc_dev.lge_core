@@ -5,6 +5,7 @@ import com.nick.wood.game_engine.gcs_model.gcs.Component;
 import com.nick.wood.game_engine.gcs_model.gcs.RenderVisitor;
 import com.nick.wood.game_engine.gcs_model.generated.components.*;
 import com.nick.wood.graphics_library.communication.*;
+import com.nick.wood.graphics_library.objects.ProjectionType;
 import com.nick.wood.graphics_library.objects.lighting.*;
 import com.nick.wood.graphics_library.objects.Camera;
 import com.nick.wood.graphics_library.objects.CameraType;
@@ -144,6 +145,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 				new Camera(
 						cameraObject.getName(),
 						CameraType.valueOf(cameraObject.getCameraObjectType().toString()),
+						ProjectionType.valueOf(cameraObject.getCameraProjectionType().toString()),
 						cameraObject.getWidth(),
 						cameraObject.getHeight(),
 						cameraObject.getFov(),
