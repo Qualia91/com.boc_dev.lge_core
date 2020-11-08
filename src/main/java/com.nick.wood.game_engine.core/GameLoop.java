@@ -86,16 +86,20 @@ public class GameLoop implements Subscribable {
 
 		ArrayList<Scene> scenes = new ArrayList<>();
 		for (SceneLayer sceneLayer : sceneLayers) {
-			sceneLayer.getGameBus().register(this);
-			sceneLayer.getGameBus().register(controllerState);
-			InputSystem inputSystem = new InputSystem(controllerState, sceneLayer.getGameBus());
-			sceneLayer.getGcsSystems().add((GcsSystem) inputSystem);
 			scenes.add(sceneLayer.getScene());
 		}
 
 		this.window = new Window(scenes, renderGameBus);
 
 		this.renderGameBus.register(window);
+
+		for (SceneLayer sceneLayer : sceneLayers) {
+			sceneLayer.getGameBus().register(this);
+			sceneLayer.getGameBus().register(controllerState);
+			InputSystem inputSystem = new InputSystem(controllerState, sceneLayer.getGameBus());
+			sceneLayer.getGcsSystems().add((GcsSystem) inputSystem);
+			sceneLayer.getGameBus().register(window);
+		}
 
 	}
 
@@ -128,8 +132,6 @@ public class GameLoop implements Subscribable {
 	}
 
 	public void update() {
-
-
 
 		long step = 0;
 		long lastTime = System.nanoTime();
@@ -212,14 +214,11 @@ public class GameLoop implements Subscribable {
 
 	}
 
-	public ExecutorService getExecutorService() {
-		return executorService;
-	}
-
 	@Override
 	public void handle(Event<?> event) {
 
 		if (event.getType().equals(ManagementEventType.SHUTDOWN)) {
+			System.out.println("Shutting down");
 			shutdown = true;
 			executorService.shutdownNow();
 		} else if (event.getType().equals(RenderableUpdateEventType.CREATE)) {
