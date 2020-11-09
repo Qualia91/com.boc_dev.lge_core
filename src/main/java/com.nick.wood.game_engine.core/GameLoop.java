@@ -82,7 +82,9 @@ public class GameLoop implements Subscribable {
 		this.executorService.submit(controllerState);
 		this.renderGameBus.register(controllerState);
 
-		this.renderGameBus.register(new ErrorSubscribable(System.err::println));
+        ErrorSubscribable errorSubscribable = new ErrorSubscribable(System.err::println);
+        this.renderGameBus.register(errorSubscribable);
+        executorService.submit(errorSubscribable);
 
 		ArrayList<Scene> scenes = new ArrayList<>();
 		for (SceneLayer sceneLayer : sceneLayers) {
