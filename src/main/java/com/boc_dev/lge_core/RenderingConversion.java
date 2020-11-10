@@ -1,10 +1,8 @@
-package com.nick.wood.game_engine.core;
+package com.boc_dev.lge_core;
 
-import com.nick.wood.game_engine.event_bus.busses.GameBus;
-import com.nick.wood.game_engine.gcs_model.gcs.Component;
-import com.nick.wood.maths.objects.matrix.Matrix4f;
-
-import java.util.UUID;
+import com.boc_dev.event_bus.busses.GameBus;
+import com.boc_dev.lge_model.gcs.Component;
+import com.boc_dev.maths.objects.matrix.Matrix4f;
 
 public class RenderingConversion {
 

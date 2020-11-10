@@ -1,28 +1,25 @@
-package com.nick.wood.game_engine.core;
+package com.boc_dev.lge_core;
 
-import com.nick.wood.game_engine.event_bus.busses.GameBus;
-import com.nick.wood.game_engine.event_bus.event_types.ErrorEventType;
-import com.nick.wood.game_engine.event_bus.event_types.ManagementEventType;
-import com.nick.wood.game_engine.event_bus.events.ErrorEvent;
-import com.nick.wood.game_engine.event_bus.events.ManagementEvent;
-import com.nick.wood.game_engine.event_bus.interfaces.Bus;
-import com.nick.wood.game_engine.event_bus.interfaces.Event;
-import com.nick.wood.game_engine.event_bus.interfaces.Subscribable;
-import com.nick.wood.game_engine.event_bus.subscribables.ErrorSubscribable;
-import com.nick.wood.game_engine.gcs_model.gcs.RegistryUpdater;
-import com.nick.wood.game_engine.gcs_model.bus.RenderableUpdateEvent;
-import com.nick.wood.game_engine.gcs_model.bus.RenderableUpdateEventType;
-import com.nick.wood.game_engine.gcs_model.gcs.Component;
-import com.nick.wood.game_engine.gcs_model.generated.components.ComponentType;
-import com.nick.wood.game_engine.gcs_model.generated.components.TransformObject;
-import com.nick.wood.game_engine.gcs_model.systems.GcsSystem;
-import com.nick.wood.game_engine.systems.control.ControllerState;
-import com.nick.wood.game_engine.systems.control.GameManagementInputController;
-import com.nick.wood.game_engine.systems.control.InputSystem;
-import com.nick.wood.graphics_library.Window;
-import com.nick.wood.graphics_library.WindowInitialisationParameters;
-import com.nick.wood.graphics_library.objects.render_scene.Scene;
-import com.nick.wood.maths.objects.matrix.Matrix4f;
+import com.boc_dev.event_bus.busses.GameBus;
+import com.boc_dev.event_bus.event_types.ErrorEventType;
+import com.boc_dev.event_bus.event_types.ManagementEventType;
+import com.boc_dev.event_bus.events.ErrorEvent;
+import com.boc_dev.event_bus.events.ManagementEvent;
+import com.boc_dev.event_bus.interfaces.Event;
+import com.boc_dev.event_bus.interfaces.Subscribable;
+import com.boc_dev.event_bus.subscribables.ErrorSubscribable;
+import com.boc_dev.lge_model.bus.RenderableUpdateEvent;
+import com.boc_dev.lge_model.bus.RenderableUpdateEventType;
+import com.boc_dev.lge_model.gcs.Component;
+import com.boc_dev.lge_model.generated.components.ComponentType;
+import com.boc_dev.lge_model.generated.components.TransformObject;
+import com.boc_dev.lge_model.systems.GcsSystem;
+import com.boc_dev.lge_systems.control.ControllerState;
+import com.boc_dev.lge_systems.control.InputSystem;
+import com.boc_dev.graphics_library.Window;
+import com.boc_dev.graphics_library.WindowInitialisationParameters;
+import com.boc_dev.graphics_library.objects.render_scene.Scene;
+import com.boc_dev.maths.objects.matrix.Matrix4f;
 
 import java.io.IOException;
 import java.util.*;
@@ -84,7 +81,6 @@ public class GameLoop implements Subscribable {
 
         ErrorSubscribable errorSubscribable = new ErrorSubscribable(System.err::println);
         this.renderGameBus.register(errorSubscribable);
-        executorService.submit(errorSubscribable);
 
 		ArrayList<Scene> scenes = new ArrayList<>();
 		for (SceneLayer sceneLayer : sceneLayers) {
@@ -98,11 +94,13 @@ public class GameLoop implements Subscribable {
 		for (SceneLayer sceneLayer : sceneLayers) {
 			sceneLayer.getGameBus().register(this);
 			sceneLayer.getGameBus().register(controllerState);
+			sceneLayer.getGameBus().register(errorSubscribable);
 			InputSystem inputSystem = new InputSystem(controllerState, sceneLayer.getGameBus());
 			sceneLayer.getGcsSystems().add((GcsSystem) inputSystem);
 			sceneLayer.getGameBus().register(window);
 		}
 
+		executorService.submit(errorSubscribable);
 	}
 
 	public void render() {

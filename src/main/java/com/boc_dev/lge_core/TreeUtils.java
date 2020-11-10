@@ -1,9 +1,9 @@
-package com.nick.wood.game_engine.core;
+package com.boc_dev.lge_core;
 
-import com.nick.wood.game_engine.gcs_model.gcs.Component;
-import com.nick.wood.game_engine.gcs_model.generated.components.ComponentType;
-import com.nick.wood.game_engine.gcs_model.generated.components.TransformObject;
-import com.nick.wood.maths.objects.matrix.Matrix4f;
+import com.boc_dev.lge_model.gcs.Component;
+import com.boc_dev.lge_model.generated.components.ComponentType;
+import com.boc_dev.lge_model.generated.components.TransformObject;
+import com.boc_dev.maths.objects.matrix.Matrix4f;
 
 public class TreeUtils {
 

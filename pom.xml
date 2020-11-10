@@ -4,45 +4,45 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.nick.wood.game_engine.core</groupId>
-    <artifactId>com.nick.wood.game_engine.core</artifactId>
+    <groupId>com.boc_dev.lge_core</groupId>
+    <artifactId>com.boc_dev.lge_core</artifactId>
     <version>1.0-SNAPSHOT</version>
 
 
     <dependencies>
         <dependency>
-            <groupId>com.nick.wood.game_engine.gcs_model</groupId>
-            <artifactId>com.nick.wood.game_engine.gcs_model</artifactId>
+            <groupId>com.boc_dev.lge_model</groupId>
+            <artifactId>com.boc_dev.lge_model</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.nick.wood.game_engine.systems</groupId>
-            <artifactId>com.nick.wood.game_engine.systems</artifactId>
+            <groupId>com.boc_dev.lge_systems</groupId>
+            <artifactId>com.boc_dev.lge_systems</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.nick.wood.maths</groupId>
-            <artifactId>com.nick.wood.maths</artifactId>
+            <groupId>com.boc_dev.maths</groupId>
+            <artifactId>com.boc_dev.maths</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.nick.wood.physics_library</groupId>
-            <artifactId>com.nick.wood.physics_library</artifactId>
+            <groupId>com.boc_dev.physics_library</groupId>
+            <artifactId>com.boc_dev.physics_library</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.nick.wood.graphics_library</groupId>
-            <artifactId>com.nick.wood.graphics_library</artifactId>
+            <groupId>com.boc_dev.graphics_library</groupId>
+            <artifactId>com.boc_dev.graphics_library</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.nick.wood.game_engine.event_bus</groupId>
-            <artifactId>com.nick.wood.game_engine.event_bus</artifactId>
+            <groupId>com.boc_dev.event_bus</groupId>
+            <artifactId>com.boc_dev.event_bus</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>

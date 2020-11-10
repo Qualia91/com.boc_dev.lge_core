@@ -1,14 +1,14 @@
-package com.nick.wood.game_engine.core;
+package com.boc_dev.lge_core;
 
-import com.nick.wood.game_engine.event_bus.busses.GameBus;
-import com.nick.wood.game_engine.gcs_model.gcs.Component;
-import com.nick.wood.game_engine.gcs_model.gcs.Registry;
-import com.nick.wood.game_engine.gcs_model.gcs.RegistryUpdater;
-import com.nick.wood.game_engine.gcs_model.systems.GcsSystem;
-import com.nick.wood.graphics_library.Shader;
-import com.nick.wood.graphics_library.objects.lighting.Fog;
-import com.nick.wood.graphics_library.objects.render_scene.Scene;
-import com.nick.wood.maths.objects.vector.Vec3f;
+import com.boc_dev.event_bus.busses.GameBus;
+import com.boc_dev.lge_model.gcs.Component;
+import com.boc_dev.lge_model.gcs.Registry;
+import com.boc_dev.lge_model.gcs.RegistryUpdater;
+import com.boc_dev.lge_model.systems.GcsSystem;
+import com.boc_dev.graphics_library.Shader;
+import com.boc_dev.graphics_library.objects.lighting.Fog;
+import com.boc_dev.graphics_library.objects.render_scene.Scene;
+import com.boc_dev.maths.objects.vector.Vec3f;
 
 import java.util.ArrayList;
 

@@ -1,10 +1,10 @@
-package com.nick.wood.game_engine.core;
+package com.boc_dev.lge_core;
 
-import com.nick.wood.game_engine.gcs_model.gcs.Component;
-import com.nick.wood.game_engine.gcs_model.generated.components.*;
-import com.nick.wood.graphics_library.objects.materials.BasicMaterial;
-import com.nick.wood.graphics_library.objects.materials.Material;
-import com.nick.wood.graphics_library.objects.materials.NormalMaterial;
+import com.boc_dev.lge_model.gcs.Component;
+import com.boc_dev.lge_model.generated.components.*;
+import com.boc_dev.graphics_library.objects.materials.BasicMaterial;
+import com.boc_dev.graphics_library.objects.materials.Material;
+import com.boc_dev.graphics_library.objects.materials.NormalMaterial;
 
 public class MaterialBuilder {
 	public Material build(MaterialObject materialObject) {
