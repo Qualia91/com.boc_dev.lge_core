@@ -267,7 +267,17 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 	@Override
 	public void sendCreateUpdate(TextObject textObject) {
-
+//		resolveTransforms(textObject);
+//
+//		String textObjectId = geometryObject.getModelFile() + geometryObject.getMaterial().toString();
+//
+//		if (geometryCreateEventsMap.containsKey(modelStringId)) {
+//			geometryCreateEventsMap.get(modelStringId).add(geometryObject);
+//		} else {
+//			HashSet<GeometryObject> instances = new HashSet<>();
+//			instances.add(geometryObject);
+//			geometryCreateEventsMap.put(modelStringId, instances);
+//		}
 	}
 
 	@Override
