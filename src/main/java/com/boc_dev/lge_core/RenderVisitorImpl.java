@@ -96,7 +96,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 				gameBus.dispatch(new GeometryCreateEvent(
 						instanceObjects,
-						new Model(anyTerrainChunkObject.getName(), findMaterialUUID(anyTerrainChunkObject)),
+						new Model(anyTerrainChunkObject.getName(), anyTerrainChunkObject.getMaterialID()),
 						layerName
 				));
 
@@ -329,16 +329,6 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 	}
 
-	private UUID findMaterialUUID(Component component) {
-		UUID materialUUID = null;
-		if (component.getParent() != null && component.getParent().getComponentType().equals(ComponentType.TERRAINGENERATION)) {
-			TerrainGenerationObject terrainGenerationObject = (TerrainGenerationObject) component.getParent();
-			return terrainGenerationObject.getMaterialID();
-		}
-
-		return null;
-	}
-
 	@Override
 	public void sendInstanceUpdate(GeometryObject geometryObject, Matrix4f newTransform) {
 
@@ -459,7 +449,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 				terrainChunkObject.getName()
 		));
 
-		String modelStringId = terrainChunkObject.getName();
+		String modelStringId = terrainChunkObject.getName() + terrainChunkObject.getMaterialID().toString();
 
 		if (geometryDeleteEventsMap.containsKey(modelStringId)) {
 			geometryDeleteEventsMap.get(modelStringId).add(terrainChunkObject.getUuid());
