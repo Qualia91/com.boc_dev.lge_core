@@ -331,6 +331,22 @@ public class RenderVisitorImpl implements RenderVisitor {
 	}
 
 	@Override
+	public void sendCreateUpdate(WaterChunkObject waterChunkObject) {
+
+		resolveTransforms(waterChunkObject);
+
+		gameBus.dispatch(new WaterCreateEvent(
+				waterChunkObject.getUuid(),
+				waterChunkObject.getName(),
+				waterChunkObject.getGrid(),
+				waterChunkObject.getCellSpace(),
+				layerName,
+				waterChunkObject.getGlobalTransform().transpose()
+		));
+
+	}
+
+	@Override
 	public void sendInstanceUpdate(GeometryObject geometryObject, Matrix4f newTransform) {
 
 		String modelStringId = geometryObject.getModelFile() + geometryObject.getMaterial().toString();
@@ -347,7 +363,6 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 	@Override
 	public void sendInstanceUpdate(MaterialObject materialObject, Matrix4f newTransform) {
-
 	}
 
 	@Override
@@ -390,6 +405,11 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 	@Override
 	public void sendInstanceUpdate(TerrainChunkObject terrainChunkObject, Matrix4f translation) {
+
+	}
+
+	@Override
+	public void sendInstanceUpdate(WaterChunkObject waterChunkObject, Matrix4f newTransform) {
 
 	}
 
@@ -459,6 +479,11 @@ public class RenderVisitorImpl implements RenderVisitor {
 			instances.add(terrainChunkObject.getUuid());
 			geometryDeleteEventsMap.put(modelStringId, instances);
 		}
+
+	}
+
+	@Override
+	public void sendDeleteUpdate(WaterChunkObject waterChunkObject) {
 
 	}
 
