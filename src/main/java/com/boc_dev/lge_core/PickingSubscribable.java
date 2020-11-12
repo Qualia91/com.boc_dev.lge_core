@@ -1,12 +1,13 @@
-//package com.nick.wood.game_engine.core;
+//package com.boc_dev.lge_core;
 //
-//import com.nick.wood.game_engine.event_bus.event_data.PickingResponseEventData;
-//import com.nick.wood.game_engine.event_bus.event_types.ManagementEventType;
-//import com.nick.wood.game_engine.event_bus.event_types.PickingEventType;
-//import com.nick.wood.game_engine.event_bus.events.ManagementEvent;
-//import com.nick.wood.game_engine.event_bus.events.PickingEvent;
-//import com.nick.wood.game_engine.event_bus.interfaces.Event;
-//import com.nick.wood.game_engine.event_bus.interfaces.Subscribable;
+//import com.boc_dev.event_bus.event_data.PickingResponseEventData;
+//import com.boc_dev.event_bus.event_types.ManagementEventType;
+//import com.boc_dev.event_bus.event_types.PickingEventType;
+//import com.boc_dev.event_bus.events.ManagementEvent;
+//import com.boc_dev.event_bus.events.PickingEvent;
+//import com.boc_dev.event_bus.interfaces.Event;
+//import com.boc_dev.event_bus.interfaces.Subscribable;
+//import com.boc_dev.lge_model.gcs.Registry;
 //
 //import java.util.ArrayList;
 //import java.util.HashSet;
@@ -18,7 +19,7 @@
 //	private final Set<Class<?>> supports = new HashSet<>();
 //	private final ArrayBlockingQueue<Event<?>> eventQueue = new ArrayBlockingQueue<>(10);
 //	private final ArrayList<Event<?>> drainToList = new ArrayList<>();
-//	private final ArrayList<GameObject> gameObjects;
+//	private final ArrayList<Registry> gameObjects;
 //
 //	private boolean shutdown = false;
 //

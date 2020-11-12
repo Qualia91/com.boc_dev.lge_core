@@ -26,7 +26,7 @@ public class SceneLayer {
 		this.gameBus = new GameBus();
 
 		this.layerName = layerName;
-		this.registry = new Registry(gameBus);
+		this.registry = new Registry(gameBus, layerName);
 		this.gcsSystems = new ArrayList<>();
 		this.registryUpdater = new RegistryUpdater(gcsSystems, registry, gameBus);
 		this.scene = new Scene(

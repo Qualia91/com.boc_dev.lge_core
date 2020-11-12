@@ -1,10 +1,13 @@
 package com.boc_dev.lge_core;
 
 import com.boc_dev.event_bus.busses.GameBus;
+import com.boc_dev.event_bus.event_data.PickingResponseEventData;
 import com.boc_dev.event_bus.event_types.ErrorEventType;
 import com.boc_dev.event_bus.event_types.ManagementEventType;
+import com.boc_dev.event_bus.event_types.PickingEventType;
 import com.boc_dev.event_bus.events.ErrorEvent;
 import com.boc_dev.event_bus.events.ManagementEvent;
+import com.boc_dev.event_bus.events.PickingEvent;
 import com.boc_dev.event_bus.interfaces.Event;
 import com.boc_dev.event_bus.interfaces.Subscribable;
 import com.boc_dev.event_bus.subscribables.ErrorSubscribable;
@@ -19,6 +22,7 @@ import com.boc_dev.lge_systems.control.InputSystem;
 import com.boc_dev.graphics_library.Window;
 import com.boc_dev.graphics_library.WindowInitialisationParameters;
 import com.boc_dev.graphics_library.objects.render_scene.Scene;
+import com.boc_dev.lge_systems.control.PickingSystem;
 import com.boc_dev.maths.objects.matrix.Matrix4f;
 
 import java.io.IOException;
@@ -97,6 +101,9 @@ public class GameLoop implements Subscribable {
 			sceneLayer.getGameBus().register(errorSubscribable);
 			InputSystem inputSystem = new InputSystem(controllerState, sceneLayer.getGameBus());
 			sceneLayer.getGcsSystems().add((GcsSystem) inputSystem);
+			PickingSystem pickingSystem = new PickingSystem();
+			sceneLayer.getGcsSystems().add((GcsSystem) pickingSystem);
+			this.renderGameBus.register(pickingSystem);
 			sceneLayer.getGameBus().register(window);
 		}
 
@@ -227,6 +234,8 @@ public class GameLoop implements Subscribable {
 			removedRenderableQueue.offer((Component) event.getData());
 		} else if (event.getType().equals(RenderableUpdateEventType.UPDATE_TRANSFORM)) {
 			updateTransformQueue.offer((TransformObject) event.getData());
+		} else if (event.getType().equals(RenderableUpdateEventType.UPDATE_RENDERABLE)) {
+			updateRenderableQueue.offer((Component) event.getData());
 		} else if (event.getType().equals(RenderableUpdateEventType.UPDATE_RENDERABLE)) {
 			updateRenderableQueue.offer((Component) event.getData());
 		}

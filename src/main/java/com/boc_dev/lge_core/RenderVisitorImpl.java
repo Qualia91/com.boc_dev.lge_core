@@ -169,6 +169,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 		gameBus.dispatch(new CameraCreateEvent(
 				new InstanceObject(cameraObject.getUuid(), cameraObject.getGlobalTransform()),
 				new Camera(
+						cameraObject.getUuid(),
 						cameraObject.getName(),
 						CameraType.valueOf(cameraObject.getCameraObjectType().toString()),
 						ProjectionType.valueOf(cameraObject.getCameraProjectionType().toString()),
