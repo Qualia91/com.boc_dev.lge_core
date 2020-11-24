@@ -26,6 +26,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 
 	private final HashMap<String, HashSet<GeometryObject>> geometryCreateEventsMap = new HashMap<>();
+	private final HashMap<String, HashSet<GeometryObject>> pickingGeometryCreateEventsMap = new HashMap<>();
 	private final HashMap<String, HashSet<TerrainChunkObject>> terrainCreateEventsMap = new HashMap<>();
 	private final HashMap<String, HashSet<InstanceObject>> geometryUpdateEventsMap = new HashMap<>();
 	private final HashMap<String, HashSet<UUID>> geometryDeleteEventsMap = new HashMap<>();
@@ -79,6 +80,31 @@ public class RenderVisitorImpl implements RenderVisitor {
 		}
 
 		geometryCreateEventsMap.clear();
+
+		for (Map.Entry<String, HashSet<GeometryObject>> stringGeometryObjectEntry : pickingGeometryCreateEventsMap.entrySet()) {
+
+			if (!stringGeometryObjectEntry.getValue().isEmpty()) {
+
+				ArrayList<InstanceObject> instanceObjects = new ArrayList<>(stringGeometryObjectEntry.getValue().size());
+
+				String modelFile = null;
+
+				for (GeometryObject geometryObject : stringGeometryObjectEntry.getValue()) {
+					modelFile = geometryObject.getModelFile();
+					instanceObjects.add(new InstanceObject(geometryObject.getUuid(), geometryObject.getGlobalTransform().transpose()));
+
+				}
+
+				gameBus.dispatch(new PickingCreateEvent(
+						instanceObjects,
+						modelFile,
+						layerName
+				));
+
+			}
+		}
+
+		pickingGeometryCreateEventsMap.clear();
 
 		for (Map.Entry<String, HashSet<TerrainChunkObject>> stringHashSetEntry : terrainCreateEventsMap.entrySet()) {
 
@@ -347,6 +373,28 @@ public class RenderVisitorImpl implements RenderVisitor {
 	}
 
 	@Override
+	public void sendCreateUpdate(PickableObject pickableObject) {
+
+		resolveTransforms(pickableObject);
+
+		// get parent geometry
+		if (pickableObject.getParent() != null && pickableObject.getParent().getComponentType().equals(ComponentType.GEOMETRY)) {
+			GeometryObject geometryObject = (GeometryObject) pickableObject.getParent();
+
+			String modelStringId = geometryObject.getModelFile() + geometryObject.getMaterial().toString();
+
+			if (pickingGeometryCreateEventsMap.containsKey(modelStringId)) {
+				pickingGeometryCreateEventsMap.get(modelStringId).add(geometryObject);
+			} else {
+				HashSet<GeometryObject> instances = new HashSet<>();
+				instances.add(geometryObject);
+				pickingGeometryCreateEventsMap.put(modelStringId, instances);
+			}
+		}
+
+	}
+
+	@Override
 	public void sendInstanceUpdate(GeometryObject geometryObject, Matrix4f newTransform) {
 
 		String modelStringId = geometryObject.getModelFile() + geometryObject.getMaterial().toString();
@@ -410,6 +458,11 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 	@Override
 	public void sendInstanceUpdate(WaterChunkObject waterChunkObject, Matrix4f newTransform) {
+
+	}
+
+	@Override
+	public void sendInstanceUpdate(PickableObject pickableObject, Matrix4f newTransform) {
 
 	}
 
@@ -484,6 +537,11 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 	@Override
 	public void sendDeleteUpdate(WaterChunkObject waterChunkObject) {
+
+	}
+
+	@Override
+	public void sendDeleteUpdate(PickableObject pickableObject) {
 
 	}
 
