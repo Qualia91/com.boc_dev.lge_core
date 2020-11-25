@@ -26,10 +26,12 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 
 	private final HashMap<String, HashSet<GeometryObject>> geometryCreateEventsMap = new HashMap<>();
-	private final HashMap<String, HashSet<GeometryObject>> pickingGeometryCreateEventsMap = new HashMap<>();
+	private final HashMap<String, HashSet<GeometryObject>> pickingCreateEventsMap = new HashMap<>();
 	private final HashMap<String, HashSet<TerrainChunkObject>> terrainCreateEventsMap = new HashMap<>();
 	private final HashMap<String, HashSet<InstanceObject>> geometryUpdateEventsMap = new HashMap<>();
+	private final HashMap<String, HashSet<InstanceObject>> pickingUpdateEventsMap = new HashMap<>();
 	private final HashMap<String, HashSet<UUID>> geometryDeleteEventsMap = new HashMap<>();
+	private final HashMap<String, HashSet<UUID>> pickingDeleteEventsMap = new HashMap<>();
 	private String layerName = "DEFAULT";
 
 
@@ -53,6 +55,19 @@ public class RenderVisitorImpl implements RenderVisitor {
 		}
 
 		geometryDeleteEventsMap.clear();
+
+		// do delete first so it only deletes objects already in the scene
+		for (Map.Entry<String, HashSet<UUID>> stringArrayListEntry : pickingDeleteEventsMap.entrySet()) {
+
+			gameBus.dispatch(new PickingRemoveEvent(
+					stringArrayListEntry.getValue(),
+					stringArrayListEntry.getKey(),
+					layerName
+			));
+
+		}
+
+		pickingDeleteEventsMap.clear();
 
 		for (Map.Entry<String, HashSet<GeometryObject>> stringGeometryObjectEntry : geometryCreateEventsMap.entrySet()) {
 
@@ -81,7 +96,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 		geometryCreateEventsMap.clear();
 
-		for (Map.Entry<String, HashSet<GeometryObject>> stringGeometryObjectEntry : pickingGeometryCreateEventsMap.entrySet()) {
+		for (Map.Entry<String, HashSet<GeometryObject>> stringGeometryObjectEntry : pickingCreateEventsMap.entrySet()) {
 
 			if (!stringGeometryObjectEntry.getValue().isEmpty()) {
 
@@ -104,7 +119,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 			}
 		}
 
-		pickingGeometryCreateEventsMap.clear();
+		pickingCreateEventsMap.clear();
 
 		for (Map.Entry<String, HashSet<TerrainChunkObject>> stringHashSetEntry : terrainCreateEventsMap.entrySet()) {
 
@@ -142,6 +157,18 @@ public class RenderVisitorImpl implements RenderVisitor {
 		}
 
 		geometryUpdateEventsMap.clear();
+
+		for (Map.Entry<String, HashSet<InstanceObject>> stringArrayListEntry : pickingUpdateEventsMap.entrySet()) {
+
+			gameBus.dispatch(new PickingUpdateEvent(
+					stringArrayListEntry.getKey(),
+					stringArrayListEntry.getValue(),
+					layerName
+			));
+
+		}
+
+		pickingUpdateEventsMap.clear();
 	}
 
 	private void resolveTransforms(Component component) {
@@ -383,12 +410,12 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 			String modelStringId = geometryObject.getModelFile() + geometryObject.getMaterial().toString();
 
-			if (pickingGeometryCreateEventsMap.containsKey(modelStringId)) {
-				pickingGeometryCreateEventsMap.get(modelStringId).add(geometryObject);
+			if (pickingCreateEventsMap.containsKey(modelStringId)) {
+				pickingCreateEventsMap.get(modelStringId).add(geometryObject);
 			} else {
 				HashSet<GeometryObject> instances = new HashSet<>();
 				instances.add(geometryObject);
-				pickingGeometryCreateEventsMap.put(modelStringId, instances);
+				pickingCreateEventsMap.put(modelStringId, instances);
 			}
 		}
 
@@ -464,6 +491,19 @@ public class RenderVisitorImpl implements RenderVisitor {
 	@Override
 	public void sendInstanceUpdate(PickableObject pickableObject, Matrix4f newTransform) {
 
+		// get parent geometry
+		if (pickableObject.getParent() != null && pickableObject.getParent().getComponentType().equals(ComponentType.GEOMETRY)) {
+			GeometryObject geometryObject = (GeometryObject) pickableObject.getParent();
+			String modelStringId = geometryObject.getModelFile() + geometryObject.getMaterial().toString();
+
+			if (pickingUpdateEventsMap.containsKey(modelStringId)) {
+				pickingUpdateEventsMap.get(modelStringId).add(new InstanceObject(geometryObject.getUuid(), newTransform.transpose()));
+			} else {
+				HashSet<InstanceObject> instances = new HashSet<>();
+				instances.add(new InstanceObject(geometryObject.getUuid(), newTransform.transpose()));
+				pickingUpdateEventsMap.put(modelStringId, instances);
+			}
+		}
 	}
 
 	@Override
@@ -542,6 +582,21 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 	@Override
 	public void sendDeleteUpdate(PickableObject pickableObject) {
+
+		// get parent geometry
+		if (pickableObject.getParent() != null && pickableObject.getParent().getComponentType().equals(ComponentType.GEOMETRY)) {
+			GeometryObject geometryObject = (GeometryObject) pickableObject.getParent();
+			String modelStringId = geometryObject.getModelFile();
+
+			if (pickingDeleteEventsMap.containsKey(modelStringId)) {
+				pickingDeleteEventsMap.get(modelStringId).add(geometryObject.getUuid());
+			} else {
+				HashSet<UUID> instances = new HashSet<>();
+				instances.add(geometryObject.getUuid());
+				pickingDeleteEventsMap.put(modelStringId, instances);
+			}
+
+		}
 
 	}
 
