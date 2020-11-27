@@ -236,8 +236,6 @@ public class GameLoop implements Subscribable {
 			updateTransformQueue.offer((TransformObject) event.getData());
 		} else if (event.getType().equals(RenderableUpdateEventType.UPDATE_RENDERABLE)) {
 			updateRenderableQueue.offer((Component) event.getData());
-		} else if (event.getType().equals(RenderableUpdateEventType.UPDATE_RENDERABLE)) {
-			updateRenderableQueue.offer((Component) event.getData());
 		}
 	}
 
