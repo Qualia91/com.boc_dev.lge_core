@@ -1,6 +1,7 @@
 package com.boc_dev.lge_core;
 
 import com.boc_dev.event_bus.busses.GameBus;
+import com.boc_dev.event_bus.event_data.ManagementEventData;
 import com.boc_dev.event_bus.event_data.PickingResponseEventData;
 import com.boc_dev.event_bus.event_types.ErrorEventType;
 import com.boc_dev.event_bus.event_types.ManagementEventType;
@@ -108,6 +109,7 @@ public class GameLoop implements Subscribable {
 		}
 
 		executorService.submit(errorSubscribable);
+
 	}
 
 	public void render() {
@@ -124,6 +126,7 @@ public class GameLoop implements Subscribable {
 			renderGameBus.dispatch(new ErrorEvent(e, ErrorEventType.CRITICAL));
 			window.close();
 			shutdown = true;
+			return;
 		}
 
 		while (!window.shouldClose()) {
@@ -134,8 +137,11 @@ public class GameLoop implements Subscribable {
 			lastTime = System.nanoTime();
 		}
 
+		renderGameBus.dispatch(new ManagementEvent(new ManagementEventData(), ManagementEventType.SHUTDOWN));
+
 		window.close();
 		shutdown = true;
+
 	}
 
 	public void update() {
@@ -246,16 +252,8 @@ public class GameLoop implements Subscribable {
 
 	public void start() {
 
-		executorService.execute(() -> {
-			while(!Thread.currentThread().isInterrupted()) {
-				this.render();
-			}
-		});
+		executorService.execute(this::render);
 
-		executorService.execute(() -> {
-			while(!Thread.currentThread().isInterrupted()) {
-				this.update();
-			}
-		});
+		executorService.execute(this::update);
 	}
 }
