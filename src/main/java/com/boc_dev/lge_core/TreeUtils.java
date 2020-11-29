@@ -2,6 +2,7 @@ package com.boc_dev.lge_core;
 
 import com.boc_dev.lge_model.gcs.Component;
 import com.boc_dev.lge_model.generated.components.ComponentType;
+import com.boc_dev.lge_model.generated.components.GeometryObject;
 import com.boc_dev.lge_model.generated.components.TransformObject;
 import com.boc_dev.maths.objects.matrix.Matrix4f;
 
@@ -47,15 +48,21 @@ public class TreeUtils {
 		// if its a transform object, update the currentGlobalTransform
 		if (component.getComponentType().equals(ComponentType.TRANSFORM)) {
 			TransformObject transformObject = (TransformObject) component;
-			currentGlobalTransform = currentGlobalTransform.multiply(
-					Matrix4f.Transform(
-							transformObject.getPosition(),
-							transformObject.getRotation().toMatrix(),
-							transformObject.getScale()));
+
+			currentGlobalTransform = Matrix4f.Transform(
+					transformObject.getPosition(),
+					transformObject.getRotation().toMatrix(),
+					transformObject.getScale()).multiply(currentGlobalTransform);
 			// then set clean so the next pass doesn't bother with this transform
 		}
 		// if the component is a renderable, send an update to the graphics updating the instance transform of it
 		else if (component.getComponentType().isRender()) {
+
+			if (component.getComponentType().equals(ComponentType.GEOMETRY)) {
+				GeometryObject geometryObject = (GeometryObject) component;
+				currentGlobalTransform = geometryObject.getLocalTransformation().multiply(currentGlobalTransform);
+			}
+
 			renderingConversion.sendComponentInstanceUpdate(component, currentGlobalTransform);
 		}
 

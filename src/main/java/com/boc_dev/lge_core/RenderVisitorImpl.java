@@ -183,7 +183,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 			// now walk down the tree and calculate global transforms for all dirty
 			// because the transformation resolution has already run at this point
 			// clean components will be correct. the dirty ones will be new additions
-			treeUtils.resolveGlobalTransforms(rootCleanComponent, Matrix4f.Identity);
+			treeUtils.resolveGlobalTransforms(rootCleanComponent, rootCleanComponent.getGlobalTransform());
 
 		}
 	}
