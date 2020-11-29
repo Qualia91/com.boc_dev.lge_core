@@ -185,8 +185,15 @@ public class GameLoop implements Subscribable {
 							if (transformObject.isDirty()) {
 								TransformObject rootDirtyTransform = treeUtils.findRootDirtyTransform(transformObject);
 
+								Matrix4f startingGlobalMatrix = Matrix4f.Identity;
+
+								// if it is not the root node, get the parents global transform as the starting transform
+								if (rootDirtyTransform.getParent() != null) {
+									startingGlobalMatrix = rootDirtyTransform.getParent().getGlobalTransform();
+								}
+
 								// then resolve all transforms
-								treeUtils.resolveTransformsAndSend(rootDirtyTransform, Matrix4f.Identity, renderingConversion);
+								treeUtils.resolveTransformsAndSend(rootDirtyTransform, startingGlobalMatrix, renderingConversion);
 							}
 						}
 
