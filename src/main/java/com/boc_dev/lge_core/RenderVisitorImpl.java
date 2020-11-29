@@ -323,14 +323,14 @@ public class RenderVisitorImpl implements RenderVisitor {
 	public void sendCreateUpdate(TextObject textObject) {
 //		resolveTransforms(textObject);
 //
-//		String textObjectId = geometryObject.getModelFile() + geometryObject.getMaterial().toString();
+//		String textObjectId = textObject.getFontFile() + textObject.getText();
 //
-//		if (geometryCreateEventsMap.containsKey(modelStringId)) {
-//			geometryCreateEventsMap.get(modelStringId).add(geometryObject);
+//		if (textCreateEventsMap.containsKey(modelStringId)) {
+//			textCreateEventsMap.get(modelStringId).add(geometryObject);
 //		} else {
 //			HashSet<GeometryObject> instances = new HashSet<>();
 //			instances.add(geometryObject);
-//			geometryCreateEventsMap.put(modelStringId, instances);
+//			textCreateEventsMap.put(modelStringId, instances);
 //		}
 	}
 
