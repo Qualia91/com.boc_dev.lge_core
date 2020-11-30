@@ -422,6 +422,27 @@ public class RenderVisitorImpl implements RenderVisitor {
 	}
 
 	@Override
+	public void sendCreateUpdate(MeshObject meshObject) {
+
+		gameBus.dispatch(new ChunkMeshCreateEvent(
+				meshObject.getName(),
+				meshObject.getVertexPositions()
+		));
+
+		resolveTransforms(meshObject);
+
+		ArrayList<InstanceObject> instanceObjects = new ArrayList<>();
+		instanceObjects.add(new InstanceObject(meshObject.getUuid(), Matrix4f.Identity));
+
+		gameBus.dispatch(new GeometryCreateEvent(
+				instanceObjects,
+				new Model(meshObject.getName(), UUID.randomUUID()),
+				layerName
+		));
+
+	}
+
+	@Override
 	public void sendInstanceUpdate(GeometryObject geometryObject, Matrix4f newTransform) {
 
 		String modelStringId = geometryObject.getModelFile() + geometryObject.getMaterial().toString();
@@ -504,6 +525,11 @@ public class RenderVisitorImpl implements RenderVisitor {
 				pickingUpdateEventsMap.put(modelStringId, instances);
 			}
 		}
+	}
+
+	@Override
+	public void sendInstanceUpdate(MeshObject meshObject, Matrix4f newTransform) {
+
 	}
 
 	@Override
@@ -597,6 +623,11 @@ public class RenderVisitorImpl implements RenderVisitor {
 			}
 
 		}
+
+	}
+
+	@Override
+	public void sendDeleteUpdate(MeshObject meshObject) {
 
 	}
 
