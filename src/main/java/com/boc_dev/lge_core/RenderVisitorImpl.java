@@ -28,6 +28,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 	private final HashMap<String, HashSet<GeometryObject>> geometryCreateEventsMap = new HashMap<>();
 	private final HashMap<String, HashSet<GeometryObject>> pickingCreateEventsMap = new HashMap<>();
 	private final HashMap<String, HashSet<TerrainChunkObject>> terrainCreateEventsMap = new HashMap<>();
+	private final HashMap<String, HashSet<MeshObject>> meshCreateEventsMap = new HashMap<>();
 	private final HashMap<String, HashSet<InstanceObject>> geometryUpdateEventsMap = new HashMap<>();
 	private final HashMap<String, HashSet<InstanceObject>> pickingUpdateEventsMap = new HashMap<>();
 	private final HashMap<String, HashSet<UUID>> geometryDeleteEventsMap = new HashMap<>();
@@ -145,6 +146,31 @@ public class RenderVisitorImpl implements RenderVisitor {
 		}
 
 		terrainCreateEventsMap.clear();
+
+		for (Map.Entry<String, HashSet<MeshObject>> stringHashSetEntry : meshCreateEventsMap.entrySet()) {
+
+			if (!stringHashSetEntry.getValue().isEmpty()) {
+
+				ArrayList<InstanceObject> instanceObjects = new ArrayList<>(stringHashSetEntry.getValue().size());
+
+				MeshObject anyMesh = null;
+
+				for (MeshObject meshObject : stringHashSetEntry.getValue()) {
+					anyMesh = meshObject;
+					instanceObjects.add(new InstanceObject(meshObject.getUuid(), Matrix4f.Identity));
+
+				}
+
+				gameBus.dispatch(new GeometryCreateEvent(
+						instanceObjects,
+						new Model(anyMesh.getName(), anyMesh.getMaterialID()),
+						layerName
+				));
+
+			}
+		}
+
+		meshCreateEventsMap.clear();
 
 		for (Map.Entry<String, HashSet<InstanceObject>> stringArrayListEntry : geometryUpdateEventsMap.entrySet()) {
 
@@ -429,16 +455,13 @@ public class RenderVisitorImpl implements RenderVisitor {
 				meshObject.getVertexPositions()
 		));
 
-		resolveTransforms(meshObject);
-
-		ArrayList<InstanceObject> instanceObjects = new ArrayList<>();
-		instanceObjects.add(new InstanceObject(meshObject.getUuid(), Matrix4f.Identity));
-
-		gameBus.dispatch(new GeometryCreateEvent(
-				instanceObjects,
-				new Model(meshObject.getName(), UUID.randomUUID()),
-				layerName
-		));
+		if (meshCreateEventsMap.containsKey(meshObject.getName())) {
+			meshCreateEventsMap.get(meshObject.getName()).add(meshObject);
+		} else {
+			HashSet<MeshObject> instances = new HashSet<>();
+			instances.add(meshObject);
+			meshCreateEventsMap.put(meshObject.getName(), instances);
+		}
 
 	}
 
@@ -628,7 +651,19 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 	@Override
 	public void sendDeleteUpdate(MeshObject meshObject) {
+		gameBus.dispatch(new HeightMapMeshRemoveEvent(
+				meshObject.getName()
+		));
 
+		String modelStringId = meshObject.getName() + meshObject.getMaterialID().toString();
+
+		if (geometryDeleteEventsMap.containsKey(modelStringId)) {
+			geometryDeleteEventsMap.get(modelStringId).add(meshObject.getUuid());
+		} else {
+			HashSet<UUID> instances = new HashSet<>();
+			instances.add(meshObject.getUuid());
+			geometryDeleteEventsMap.put(modelStringId, instances);
+		}
 	}
 
 	public void setLayerName(String layerName) {
