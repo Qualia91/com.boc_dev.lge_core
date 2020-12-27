@@ -206,10 +206,16 @@ public class RenderVisitorImpl implements RenderVisitor {
 			// get the root clean component
 			Component rootCleanComponent = treeUtils.getClosestCleanComponent(component);
 
+			// check if this component is the root. If it is, starting transform is Identity.
+			// if not, starting transform is parents global transform
+			Matrix4f startingMatrix = Matrix4f.Identity;
+			if (rootCleanComponent.getParent() != null) {
+				startingMatrix = rootCleanComponent.getParent().getGlobalTransform();
+			}
 			// now walk down the tree and calculate global transforms for all dirty
 			// because the transformation resolution has already run at this point
 			// clean components will be correct. the dirty ones will be new additions
-			treeUtils.resolveGlobalTransforms(rootCleanComponent, rootCleanComponent.getGlobalTransform());
+			treeUtils.resolveGlobalTransforms(rootCleanComponent, startingMatrix);
 
 		}
 	}
