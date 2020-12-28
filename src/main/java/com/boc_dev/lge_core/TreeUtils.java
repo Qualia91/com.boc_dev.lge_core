@@ -81,11 +81,11 @@ public class TreeUtils {
 		if (component instanceof TransformObject) {
 			// if it is, multiply the global transform by it to get the new most recent transform
 			TransformObject transformObject = (TransformObject) component;
-			globalTransform = globalTransform.multiply(
+			globalTransform =
 					Matrix4f.Transform(
 							transformObject.getPosition(),
 							transformObject.getRotation().toMatrix(),
-							transformObject.getScale()));
+							transformObject.getScale()).multiply(globalTransform);
 		}
 
 		// now set the dirty flag to clean and set the global transform

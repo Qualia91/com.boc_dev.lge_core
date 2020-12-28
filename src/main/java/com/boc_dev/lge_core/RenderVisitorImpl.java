@@ -544,7 +544,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 		// get parent geometry
 		if (pickableObject.getParent() != null && pickableObject.getParent().getComponentType().equals(ComponentType.GEOMETRY)) {
 			GeometryObject geometryObject = (GeometryObject) pickableObject.getParent();
-			String modelStringId = geometryObject.getModelFile() + geometryObject.getMaterial().toString();
+			String modelStringId = geometryObject.getModelFile();
 
 			if (pickingUpdateEventsMap.containsKey(modelStringId)) {
 				pickingUpdateEventsMap.get(modelStringId).add(new InstanceObject(geometryObject.getUuid(), newTransform.transpose()));
