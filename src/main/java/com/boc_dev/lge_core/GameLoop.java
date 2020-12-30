@@ -114,8 +114,6 @@ public class GameLoop implements Subscribable {
 
 	public void render() {
 
-		long steps = 0;
-
 		long lastTime = System.nanoTime();
 
 		double deltaSeconds;
@@ -130,8 +128,7 @@ public class GameLoop implements Subscribable {
 		}
 
 		while (!window.shouldClose()) {
-			steps++;
-			window.render(steps);
+			window.render();
 			deltaSeconds = (System.nanoTime() - lastTime) / 1000000000.0;
 			window.setTitle("FPS: " + Math.round(1.0 / deltaSeconds));
 			lastTime = System.nanoTime();
