@@ -360,7 +360,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 		resolveTransforms(textObject);
 
 		gameBus.dispatch(new TextCreateEvent(
-				new TextInstance(textObject.getText(), textObject.getGlobalTransform().transpose()),
+				new TextInstance(textObject.getUuid(), textObject.getText(), textObject.getGlobalTransform().transpose()),
 				layerName,
 				textObject.getFontName()
 		));
@@ -598,7 +598,12 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 	@Override
 	public void sendDeleteUpdate(TextObject textObject) {
-
+		gameBus.dispatch(new TextRemoveEvent(
+				textObject.getUuid(),
+				textObject.getFontName(),
+				textObject.getName(),
+				layerName
+		));
 	}
 
 	@Override
