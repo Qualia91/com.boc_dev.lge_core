@@ -362,7 +362,9 @@ public class RenderVisitorImpl implements RenderVisitor {
 		gameBus.dispatch(new TextCreateEvent(
 				new TextInstance(textObject.getUuid(), textObject.getText(), textObject.getGlobalTransform().transpose()),
 				layerName,
-				textObject.getFontName()
+				textObject.getFontName(),
+				textObject.getFontSize(),
+				textObject.getFontAlignment().toString()
 		));
 	}
 
@@ -516,6 +518,12 @@ public class RenderVisitorImpl implements RenderVisitor {
 	@Override
 	public void sendInstanceUpdate(TextObject textObject, Matrix4f newTransform) {
 
+		gameBus.dispatch(new TextUpdateEvent(
+				textObject.getFontName(),
+				textObject.getUuid(),
+				layerName,
+				newTransform.transpose()
+		));
 	}
 
 	@Override
