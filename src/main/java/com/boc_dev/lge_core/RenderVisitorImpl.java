@@ -3,6 +3,7 @@ package com.boc_dev.lge_core;
 import com.boc_dev.event_bus.busses.GameBus;
 import com.boc_dev.graphics_library.communication.*;
 import com.boc_dev.graphics_library.objects.lighting.*;
+import com.boc_dev.graphics_library.objects.text.TextInstance;
 import com.boc_dev.lge_model.gcs.Component;
 import com.boc_dev.lge_model.gcs.RenderVisitor;
 import com.boc_dev.lge_model.generated.components.*;
@@ -16,6 +17,8 @@ import com.boc_dev.graphics_library.objects.render_scene.InstanceObject;
 import com.boc_dev.maths.objects.matrix.Matrix4f;
 import com.boc_dev.maths.objects.vector.Vec3f;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.*;
 
 public class RenderVisitorImpl implements RenderVisitor {
@@ -353,17 +356,14 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 	@Override
 	public void sendCreateUpdate(TextObject textObject) {
-//		resolveTransforms(textObject);
-//
-//		String textObjectId = textObject.getFontFile() + textObject.getText();
-//
-//		if (textCreateEventsMap.containsKey(modelStringId)) {
-//			textCreateEventsMap.get(modelStringId).add(geometryObject);
-//		} else {
-//			HashSet<GeometryObject> instances = new HashSet<>();
-//			instances.add(geometryObject);
-//			textCreateEventsMap.put(modelStringId, instances);
-//		}
+
+		resolveTransforms(textObject);
+
+		gameBus.dispatch(new TextCreateEvent(
+				new TextInstance(textObject.getText(), textObject.getGlobalTransform().transpose()),
+				layerName,
+				textObject.getFontName()
+		));
 	}
 
 	@Override
