@@ -85,7 +85,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 				for (GeometryObject geometryObject : stringGeometryObjectEntry.getValue()) {
 					material = geometryObject.getMaterial();
 					modelFile = geometryObject.getModelFile();
-					instanceObjects.add(new InstanceObject(geometryObject.getUuid(), geometryObject.getGlobalTransform().transpose()));
+					instanceObjects.add(new InstanceObject(geometryObject.getUuid(), geometryObject.getLocalTransformation().multiply(geometryObject.getGlobalTransform()).transpose()));
 
 				}
 
@@ -110,7 +110,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 
 				for (GeometryObject geometryObject : stringGeometryObjectEntry.getValue()) {
 					modelFile = geometryObject.getModelFile();
-					instanceObjects.add(new InstanceObject(geometryObject.getUuid(), geometryObject.getGlobalTransform().transpose()));
+					instanceObjects.add(new InstanceObject(geometryObject.getUuid(), geometryObject.getLocalTransformation().multiply(geometryObject.getGlobalTransform()).transpose()));
 
 				}
 
