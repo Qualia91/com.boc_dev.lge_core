@@ -25,6 +25,7 @@ import com.boc_dev.lge_systems.control.PickingSystem;
 import com.boc_dev.maths.objects.matrix.Matrix4f;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -120,7 +121,7 @@ public class GameLoop implements Subscribable {
 
 		try {
 			window.init(wip);
-		} catch (IOException e) {
+		} catch (IOException | URISyntaxException e) {
 			renderGameBus.dispatch(new ErrorEvent(e, ErrorEventType.CRITICAL));
 			window.close();
 			shutdown = true;
