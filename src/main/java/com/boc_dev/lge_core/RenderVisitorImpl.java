@@ -36,7 +36,7 @@ public class RenderVisitorImpl implements RenderVisitor {
 	private final HashMap<String, HashSet<InstanceObject>> pickingUpdateEventsMap = new HashMap<>();
 	private final HashMap<String, HashSet<UUID>> geometryDeleteEventsMap = new HashMap<>();
 	private final HashMap<String, HashSet<UUID>> pickingDeleteEventsMap = new HashMap<>();
-	private String layerName = "DEFAULT";
+	private volatile String layerName = "DEFAULT";
 
 
 	public RenderVisitorImpl(GameBus gameBus) {
